@@ -1,0 +1,34 @@
+# Live demo: publishes the self-contained browser platform (services/ai_3d_engine/browser/forma-offline.html)
+# to GitHub Pages. Everything runs in the visitor's browser; data stays in that browser's local storage.
+name: demo
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp services/ai_3d_engine/browser/forma-offline.html _site/index.html
+          cp services/ai_3d_engine/browser/studio.html _site/studio.html
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

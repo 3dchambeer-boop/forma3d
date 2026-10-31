@@ -9,6 +9,8 @@ A user describes a part ("حامل هاتف بعرض 90 مم وارتفاع 110 
 structured spec, builds exact geometry, exports and re-validates an STL, sends it to a designer for approval, slices it
 with OrcaSlicer and prints it through OctoPrint after explicit confirmation.
 
+**Live demo (runs in your browser):** https://3dchambeer-boop.github.io/forma3d/
+
 Verification status of every part: [docs/AUDIT.md](docs/AUDIT.md) · [docs/MASTER_AUDIT.md](docs/MASTER_AUDIT.md) ·
 Deployment: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
