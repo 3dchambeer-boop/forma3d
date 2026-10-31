@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2023",
+      "DOM"
+    ]
+  },
+  "include": [
+    "./**/*.ts",
+    "../../src/lib/generation/**/*.ts",
+    "../../src/lib/printing/octoprint.ts",
+    "../../src/lib/storage.ts",
+    "../../src/lib/tripo.ts",
+    "../../services/ai_3d_engine/browser/modules.d.ts",
+    "../../src/lib/notify/**/*.ts",
+    "../../src/lib/payments/**/*.ts",
+    "../../src/lib/sync/**/*.ts",
+    "../../src/lib/security/**/*.ts",
+    "../../src/lib/access-rules.ts",
+    "../../src/lib/auth/**/*.ts"
+  ],
+  "exclude": [
+    "../../src/lib/generation/prisma-repository.ts",
+    "../../src/lib/notify/prisma-store.ts",
+    "../../src/lib/payments/prisma-store.ts"
+  ]
+}

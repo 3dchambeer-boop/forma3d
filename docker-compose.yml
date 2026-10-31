@@ -1,0 +1,85 @@
+# FORMA·3D stack. Secrets come from .env (never committed); see docs/DEPLOYMENT.md.
+#   docker compose config -q        validates this file (checked in Phase 9: passes once the required secrets are set)
+#   docker compose up -d --build
+# Only the app publishes a port, and only on 127.0.0.1: put a TLS reverse proxy (Caddy/nginx) in front of it.
+# The engine, the CAD service and the worker are reachable only on the internal network.
+# Status: images not built in the authoring environment (no Docker daemon there); see docs/PHASE9_REPORT.md.
+services:
+  engine:
+    build: ./services/ai_3d_engine
+    environment:
+      ENGINE_SERVICE_TOKEN: ${ENGINE_SERVICE_TOKEN:?set ENGINE_SERVICE_TOKEN in .env}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ENGINE_MAX_CONCURRENT_JOBS: "2"
+      ENGINE_JOB_MEMORY_MB: "2048"
+    read_only: true
+    tmpfs: ["/tmp"]
+    volumes: ["engine-artifacts:/var/lib/ai_3d_engine/artifacts"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 3g
+    restart: unless-stopped
+    logging: &logs
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  cad:
+    # OpenCascade 7.8.1 B-Rep service (STEP export, fillet/chamfer/shell/offset/draft)
+    build:
+      context: .
+      dockerfile: services/cad_engine/Dockerfile
+    environment:
+      CAD_SERVICE_TOKEN: ${CAD_SERVICE_TOKEN:?set CAD_SERVICE_TOKEN in .env}
+      CAD_MAX_EXPORT_MB: "50"
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2g
+    restart: unless-stopped
+    logging: *logs
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      ENGINE_URL: http://engine:8100
+      CAD_ENGINE_URL: http://cad:8200
+      STORAGE_DIR: /data/storage
+      DATABASE_URL: file:/data/db/custom.db
+      AI_USAGE_LOG: /data/logs/ai-usage.jsonl
+    ports: ["127.0.0.1:${APP_PORT:-3000}:3000"]
+    volumes: ["app-data:/data"]
+    depends_on:
+      engine: { condition: service_healthy }
+      cad: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging: *logs
+
+  worker:
+    build: .
+    command: ["npx", "tsx", "scripts/generation-worker.ts"]
+    env_file: .env
+    environment:
+      ENGINE_URL: http://engine:8100
+      CAD_ENGINE_URL: http://cad:8200
+      STORAGE_DIR: /data/storage
+      DATABASE_URL: file:/data/db/custom.db
+      AI_USAGE_LOG: /data/logs/ai-usage.jsonl
+    volumes: ["app-data:/data"]
+    depends_on:
+      engine: { condition: service_healthy }
+      app: { condition: service_healthy }
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging: *logs
+
+volumes:
+  engine-artifacts:
+  app-data:

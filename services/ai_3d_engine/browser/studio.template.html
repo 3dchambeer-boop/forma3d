@@ -1,0 +1,309 @@
+<title>استوديو فورما ثلاثي الأبعاد</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: workbench — spec form beside a build-plate viewer, report under the viewer */
+:root {
+  --bg: #eef1f3; --panel: #ffffff; --ink: #172028; --muted: #5d6a74; --line: #d3dae0;
+  --accent: #c8581c; --accent-ink: #ffffff; --plate: #e3e8ec; --model: #3f7f93;
+  --ok: #1f7a4d; --warn: #9a6a00; --bad: #b42318; --chip: #f3f5f7;
+  --display: "Readex Pro", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --body: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11161a; --panel: #182026; --ink: #e6ecf0; --muted: #93a2ad; --line: #2a353d;
+  --accent: #f08a4b; --accent-ink: #1a0f08; --plate: #1d262d; --model: #6fb3c8;
+  --ok: #5cc98f; --warn: #e2b54a; --bad: #f2786b; --chip: #1f2a31; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11161a; --panel: #182026; --ink: #e6ecf0; --muted: #93a2ad; --line: #2a353d;
+  --accent: #f08a4b; --accent-ink: #1a0f08; --plate: #1d262d; --model: #6fb3c8;
+  --ok: #5cc98f; --warn: #e2b54a; --bad: #f2786b; --chip: #1f2a31; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px }
+h1 { font-family: var(--display); font-size: clamp(22px, 3.2vw, 30px); margin: 0; text-wrap: balance; letter-spacing: -.01em }
+.sub { color: var(--muted); margin: 2px 0 0; max-width: 62ch }
+.note { font-size: 13px; color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 8px 12px; max-width: 70ch }
+.grid { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 18px; align-items: start }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr) } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0 }
+.step { font-family: var(--display); font-weight: 600; font-size: 15px; margin: 0; display: flex; gap: 8px; align-items: baseline }
+.step b { font-family: var(--mono); font-weight: 500; font-size: 12px; color: var(--accent) }
+label { font-size: 13px; color: var(--muted) }
+textarea, input[type=number] { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px }
+textarea { min-height: 112px; resize: vertical }
+textarea:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.examples { display: flex; flex-wrap: wrap; gap: 6px }
+.ex { font: inherit; font-size: 12.5px; background: var(--chip); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer }
+.ex:hover { border-color: var(--accent) }
+.btn { font: inherit; font-weight: 600; border-radius: 8px; padding: 10px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--chip); color: var(--ink) }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.btn:disabled { opacity: .5; cursor: default }
+.row { display: flex; flex-wrap: wrap; gap: 8px }
+.params { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px }
+.param { display: grid; gap: 3px }
+.param .top { display: flex; justify-content: space-between; gap: 6px; align-items: center }
+.param .unitbox { display: flex; gap: 4px; align-items: center }
+.param .unit { font-family: var(--mono); font-size: 12px; color: var(--muted); width: 2.2em }
+.param input { font-family: var(--mono); direction: ltr; text-align: left; padding: 6px 8px }
+.src { font-size: 10.5px; border-radius: 999px; padding: 0 7px; border: 1px solid currentColor; white-space: nowrap }
+.src.prompt { color: var(--model) } .src.user_field { color: var(--ok) } .src.default { color: var(--warn) }
+.list { margin: 0; padding-inline-start: 18px; font-size: 13.5px; display: grid; gap: 2px }
+.warn { color: var(--warn) } .bad { color: var(--bad) }
+.ltr { direction: ltr; text-align: left; unicode-bidi: isolate }
+#viewer { position: relative; height: clamp(300px, 52vh, 520px); border-radius: 8px; overflow: hidden; background: var(--plate) }
+#viewer canvas { display: block; width: 100%; height: 100% }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; background: color-mix(in srgb, var(--plate) 80%, transparent) }
+.dims { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.dim { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; display: grid }
+.dim span { font-size: 12px; color: var(--muted) }
+.dim strong { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; direction: ltr; text-align: right }
+.status { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 999px; padding: 2px 10px; border: 1px solid currentColor; width: fit-content }
+.status.VALIDATED { color: var(--ok) } .status.VALID_WITH_WARNINGS { color: var(--warn) } .status.REPAIR_REQUIRED, .status.INVALID { color: var(--bad) }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 14px; font-size: 13px }
+.facts div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); padding-block: 3px }
+.facts b { font-family: var(--mono); font-weight: 500; direction: ltr }
+details summary { cursor: pointer; color: var(--muted); font-size: 13px }
+.err { color: var(--bad); border: 1px solid var(--bad); border-radius: 8px; padding: 8px 12px; font-size: 13.5px }
+footer { color: var(--muted); font-size: 12.5px; max-width: 80ch }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="wrap" dir="rtl">
+  <header>
+    <div>
+      <h1>استوديو فورما ثلاثي الأبعاد</h1>
+      <p class="sub">اكتب القطعة التي تريد طباعتها بالعربية أو الإنجليزية. يُبنى المجسم هندسيًا بأبعاد دقيقة بالملليمتر، ثم يُصدَّر STL ويُعاد فتحه ويُفحص.</p>
+    </div>
+    <p class="note">هذه الصفحة تشغّل محرك <span class="ltr">ai_3d_engine</span> داخل متصفحك (النسخة JavaScript المطابقة لنسخة Python والمختبرة ضدها). الحسابات ومراجعة المصمم والتقطيع والطباعة تعمل في الخادم الكامل فقط.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="s1">
+      <h2 class="step" id="s1"><b>01</b>الوصف</h2>
+      <label for="prompt">ماذا تريد أن تطبع؟</label>
+      <textarea id="prompt"></textarea>
+      <div class="examples" id="examples"></div>
+      <div class="row">
+        <button class="btn" id="analyse" type="button">حلّل الوصف</button>
+        <button class="btn primary" id="build" type="button">أنشئ المجسم</button>
+      </div>
+      <div id="specbox" hidden>
+        <h2 class="step"><b>02</b>المواصفات المستخرجة — راجعها وعدّلها</h2>
+        <div id="tplname" style="font-weight:600"></div>
+        <div class="params" id="params"></div>
+        <ul class="list warn" id="assumptions"></ul>
+        <ul class="list bad ltr" id="errors"></ul>
+        <details><summary>المتطلبات القابلة للقياس</summary><ul class="list ltr" id="reqs"></ul></details>
+      </div>
+      <div class="err" id="err" hidden></div>
+    </section>
+
+    <section class="panel" aria-labelledby="s3">
+      <h2 class="step" id="s3"><b>03</b>النتيجة على سطح طباعة Ender-3 ‏(220 × 220 مم)</h2>
+      <div id="viewer"><div class="overlay" id="overlay">جارٍ تحميل العارض…</div></div>
+      <div class="dims" id="dims"></div>
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <span class="status" id="status" hidden></span>
+        <button class="btn primary" id="download" type="button" hidden>تنزيل STL ‏(ملف zip)</button>
+      </div>
+      <div class="facts" id="facts"></div>
+      <ul class="list" id="issues"></ul>
+      <details id="repairsBox" hidden><summary>إصلاحات آلية طُبّقت</summary><ul class="list ltr" id="repairs"></ul></details>
+      <details id="transformsBox" hidden><summary>تحويلات طُبّقت على الهندسة</summary><ul class="list ltr" id="transforms"></ul></details>
+      <details><summary>فحوص لم تُجرَ (تحتاج المقطّع أو مراجعة بشرية)</summary><ul class="list ltr" id="notdone"></ul></details>
+      <p class="note" id="dlnote" hidden></p>
+    </section>
+  </div>
+
+  <footer>القوالب المتاحة الآن: حامل هاتف، علبة/منظّم، زاوية تثبيت L، وردة/فاصل، علّاقة جدارية. الأوصاف التي لا تطابق قالبًا (مثل التماثيل) تحتاج مزود AI حرًّا كـ Tripo في الخادم، ولا يمكن تشغيله من هنا.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/*ENGINE*/
+</script>
+<script>
+(function () {
+  'use strict';
+  const E = window.Engine3D;
+  const $ = (id) => document.getElementById(id);
+  const EXAMPLES = [
+    'صمّم حامل هاتف مكتبي بعرض 90 مم، وارتفاع 110 مم، وفتحة لشحن الهاتف، وزاوية ميل 65 درجة',
+    'علبة منظّم 120x80x40 مم بسماكة جدار 2 مم و 3 فواصل',
+    'زاوية تثبيت رف بعرض 30 مم وسماكة 5 مم وثقبين بقطر 4.5 مم',
+    'وردة فاصل قطر خارجي 22 مم وقطر داخلي 8 مم وارتفاع 10 مم',
+    'علّاقة جدارية بعرض 25 مم وبروز 35 مم',
+  ];
+  const SRC = { prompt: 'من الوصف', user_field: 'أدخلته', default: 'افتراضي', llm: 'من الوصف' };
+  const STATUS = { VALIDATED: 'اجتاز الفحص', VALID_WITH_WARNINGS: 'صالح مع تحذيرات', REPAIR_REQUIRED: 'يحتاج إصلاحًا', INVALID: 'غير صالح' };
+  let spec = null, overrides = {}, result = null;
+
+  EXAMPLES.forEach((t) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'ex'; b.textContent = t.slice(0, 30) + '…'; b.title = t;
+    b.onclick = () => { $('prompt').value = t; overrides = {}; analyse(); build(); };
+    $('examples').appendChild(b);
+  });
+  $('prompt').addEventListener('input', () => { overrides = {}; spec = null; $('specbox').hidden = true; });
+
+  function showError(msg) { $('err').hidden = !msg; $('err').textContent = msg || ''; }
+  function li(ul, items, cls) { const el = $(ul); el.textContent = ''; items.forEach((t) => { const x = document.createElement('li'); x.textContent = t; if (cls) x.className = cls; el.appendChild(x); }); }
+
+  function analyse() {
+    showError('');
+    const prompt = $('prompt').value.trim();
+    if (prompt.length < 3) { showError('اكتب وصفًا من ثلاثة أحرف على الأقل.'); return null; }
+    spec = E.parse(prompt, overrides);
+    renderSpec();
+    return spec;
+  }
+
+  function renderSpec() {
+    $('specbox').hidden = false;
+    const s = spec.template_schema;
+    $('tplname').textContent = s ? s.title_ar : (spec.clarifications[0] || '');
+    $('tplname').className = s ? '' : 'warn';
+    const box = $('params'); box.textContent = '';
+    if (s) s.params.forEach((p) => {
+      const pv = spec.params[p.name];
+      const wrap = document.createElement('div'); wrap.className = 'param';
+      const top = document.createElement('div'); top.className = 'top';
+      const lab = document.createElement('label'); lab.htmlFor = 'p_' + p.name; lab.textContent = p.label_ar;
+      const chip = document.createElement('span'); chip.className = 'src ' + pv.source; chip.textContent = SRC[pv.source];
+      top.append(lab, chip);
+      const ub = document.createElement('div'); ub.className = 'unitbox';
+      const inp = document.createElement('input'); inp.type = 'number'; inp.id = 'p_' + p.name;
+      inp.min = p.min; inp.max = p.max; inp.step = p.unit === 'count' || p.unit === 'bool' ? 1 : 0.5; inp.value = pv.value;
+      inp.onchange = () => { overrides[p.name] = inp.value; analyse(); };
+      const unit = document.createElement('span'); unit.className = 'unit'; unit.textContent = p.unit === 'deg' ? '°' : p.unit === 'mm' ? 'مم' : '';
+      ub.append(inp, unit); wrap.append(top, ub); box.appendChild(wrap);
+    });
+    li('assumptions', spec.assumptions);
+    li('errors', spec.errors);
+    li('reqs', spec.requirements);
+    $('build').disabled = !s || spec.errors.length > 0;
+  }
+
+  // ------------------------------------------------------------- viewer
+  let renderer, scene, camera, controls, modelMesh;
+  function initViewer() {
+    if (!window.THREE) { $('overlay').textContent = 'تعذّر تحميل مكتبة العرض ثلاثي الأبعاد. الأبعاد والتقرير أدناه ما زالت صحيحة.'; return; }
+    const host = $('viewer');
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    host.prepend(renderer.domElement);
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
+    camera.up.set(0, 0, 1);
+    controls = THREE.OrbitControls ? new THREE.OrbitControls(camera, renderer.domElement) : null;
+    if (controls) { controls.enableDamping = true; }
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x404850, 0.85));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(150, -200, 300); scene.add(sun);
+    const grid = new THREE.GridHelper(220, 22, 0x8a99a5, 0x8a99a5);
+    grid.rotation.x = Math.PI / 2; grid.position.set(110, 110, 0); grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
+    const vol = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(220, 220, 250)), new THREE.LineBasicMaterial({ color: 0x8a99a5, transparent: true, opacity: 0.35 }));
+    vol.position.set(110, 110, 125); scene.add(vol);
+    const resize = () => { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+    new ResizeObserver(resize).observe(host); resize();
+    (function loop() { requestAnimationFrame(loop); if (controls) controls.update(); renderer.render(scene, camera); })();
+    $('overlay').hidden = true;
+  }
+
+  function showMesh(mesh) {
+    if (!scene) return;
+    if (modelMesh) { scene.remove(modelMesh); modelMesh.geometry.dispose(); }
+    const pos = new Float32Array(mesh.faces.length * 9);
+    mesh.faces.forEach((f, i) => f.forEach((vi, k) => { const v = mesh.vertices[vi]; pos.set(v, i * 9 + k * 3); }));
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.computeVertexNormals();
+    const color = getComputedStyle(document.documentElement).getPropertyValue('--model').trim() || '#3f7f93';
+    modelMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, flatShading: true }));
+    // centre the part on the plate (display only; the STL keeps its own origin)
+    const [lo, hi] = mesh.bounds();
+    modelMesh.position.set(110 - (lo[0] + hi[0]) / 2, 110 - (lo[1] + hi[1]) / 2, 0);
+    scene.add(modelMesh);
+    const size = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]);
+    const c = new THREE.Vector3(110, 110, (hi[2] - lo[2]) / 2);
+    camera.position.set(c.x + size * 1.6, c.y - size * 2.2, c.z + size * 1.3);
+    if (controls) { controls.target.copy(c); controls.update(); } else camera.lookAt(c);
+  }
+
+  // ------------------------------------------------------------- build
+  async function build() {
+    showError('');
+    if (!spec && !analyse()) return;
+    if (!spec.template) { showError('لا يوجد قالب هندسي لهذا الوصف. جرّب أحد الأمثلة أو صِف قطعة وظيفية بأبعادها.'); return; }
+    if (spec.errors.length) { showError('صحّح القيم خارج المدى المسموح أولًا.'); return; }
+    $('build').disabled = true; $('build').textContent = 'جارٍ البناء…';
+    await new Promise((r) => setTimeout(r, 20));
+    try {
+      result = await E.generateParametric(spec);
+      renderResult();
+    } catch (e) {
+      showError((e.code ? e.code + ': ' : '') + e.message + (e.details && Array.isArray(e.details) ? ' — ' + e.details.join('; ') : ''));
+    } finally {
+      $('build').disabled = false; $('build').textContent = 'أنشئ المجسم';
+    }
+  }
+
+  function renderResult() {
+    const r = result, s = r.size_mm, st = r.post_export_validation.stats;
+    showMesh(r.mesh);
+    $('dims').textContent = '';
+    [['العرض X', s.x], ['العمق Y', s.y], ['الارتفاع Z', s.z]].forEach(([l, v]) => {
+      const d = document.createElement('div'); d.className = 'dim';
+      const a = document.createElement('span'); a.textContent = l; const b = document.createElement('strong'); b.textContent = v.toFixed(2) + ' mm';
+      d.append(a, b); $('dims').appendChild(d);
+    });
+    $('status').hidden = false; $('status').className = 'status ' + r.status; $('status').textContent = STATUS[r.status] || r.status;
+    $('facts').textContent = '';
+    [['المثلثات', r.triangles.toLocaleString('en')], ['الحجم', (st.volume_mm3 / 1000).toFixed(2) + ' cm³'], ['الأجسام', st.bodies],
+     ['أرقّ جدار (تقدير)', st.estimated_min_wall_mm == null ? '—' : st.estimated_min_wall_mm + ' mm'], ['زمن البناء', r.duration_ms + ' ms'], ['SHA-256', r.stl_sha256.slice(0, 12) + '…']]
+      .forEach(([k, v]) => { const d = document.createElement('div'); const a = document.createElement('span'); a.textContent = k; const b = document.createElement('b'); b.textContent = v; d.append(a, b); $('facts').appendChild(d); });
+    li('issues', r.post_export_validation.issues.map((i) => i.code + (i.count != null ? ' ×' + i.count : '') + ' — ' + i.message), 'ltr');
+    li('repairs', r.validation.repairs_applied); $('repairsBox').hidden = !r.validation.repairs_applied.length;
+    li('transforms', r.transforms); $('transformsBox').hidden = !r.transforms.length;
+    li('notdone', r.post_export_validation.checks_not_performed);
+    $('download').hidden = !downloads;
+  }
+
+  // ------------------------------------------------------------- download (zip: STL is not on the viewer's download allow-list)
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(b) { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  function zipOne(name, data) {
+    const nm = new TextEncoder().encode(name), crc = crc32(data);
+    const local = new Uint8Array(30 + nm.length), dl = new DataView(local.buffer);
+    dl.setUint32(0, 0x04034b50, true); dl.setUint16(4, 20, true); dl.setUint32(14, crc, true); dl.setUint32(18, data.length, true); dl.setUint32(22, data.length, true); dl.setUint16(26, nm.length, true); local.set(nm, 30);
+    const cen = new Uint8Array(46 + nm.length), dc = new DataView(cen.buffer);
+    dc.setUint32(0, 0x02014b50, true); dc.setUint16(4, 20, true); dc.setUint16(6, 20, true); dc.setUint32(16, crc, true); dc.setUint32(20, data.length, true); dc.setUint32(24, data.length, true); dc.setUint16(28, nm.length, true); cen.set(nm, 46);
+    const end = new Uint8Array(22), de = new DataView(end.buffer);
+    de.setUint32(0, 0x06054b50, true); de.setUint16(8, 1, true); de.setUint16(10, 1, true); de.setUint32(12, cen.length, true); de.setUint32(16, local.length + data.length, true);
+    return new Blob([local, data, cen, end]);
+  }
+  let downloads = null;
+  (window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(null)).then((d) => { downloads = d; if (result) $('download').hidden = !d; }).catch(() => {});
+  $('download').onclick = async () => {
+    if (!downloads || !result) return;
+    const name = (spec.template || 'part') + '-' + result.size_mm.x + 'x' + result.size_mm.y + 'x' + result.size_mm.z + 'mm';
+    $('dlnote').hidden = false;
+    try {
+      await downloads.save({ filename: name + '.zip', data: zipOne(name + '.stl', result.stl) });
+      $('dlnote').textContent = 'حُفظ الملف. فكّ الضغط لتحصل على ' + name + '.stl';
+    } catch (e) {
+      $('dlnote').textContent = e && e.code === 'declined' ? 'أُلغي التنزيل.' : 'التنزيل غير متاح في هذا العرض.';
+    }
+  };
+
+  $('analyse').onclick = analyse;
+  $('build').onclick = build;
+  initViewer();
+  $('prompt').value = EXAMPLES[0];
+  analyse();
+  build();
+})();
+</script>

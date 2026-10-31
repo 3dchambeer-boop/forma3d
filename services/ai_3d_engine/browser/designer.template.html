@@ -1,0 +1,1103 @@
+<title>مصمّم فورما</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: workshop bench — conversation with the designer on one side, the part on the build plate on the other */
+:root {
+  --bg: #edf0f2; --panel: #ffffff; --ink: #172028; --muted: #5b6873; --line: #d2d9df; --soft: #f4f6f8;
+  --accent: #c4561b; --accent-ink: #ffffff; --plate: #e1e7eb; --model: #3d7c90; --ai: #2f5f8a;
+  --ok: #1f7a4d; --warn: #96670a; --bad: #b42318;
+  --display: "Segoe UI", "Noto Kufi Arabic", "Geeza Pro", Tahoma, system-ui, sans-serif;
+  --body: "Segoe UI", "Noto Sans Arabic", "Geeza Pro", Tahoma, system-ui, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #10151a; --panel: #172027; --ink: #e5ebef; --muted: #91a0ab; --line: #28333b; --soft: #1c262d;
+  --accent: #f08a4b; --accent-ink: #1a0f08; --plate: #1b252c; --model: #70b4c9; --ai: #8fb9e0;
+  --ok: #5cc98f; --warn: #e2b54a; --bad: #f2786b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #10151a; --panel: #172027; --ink: #e5ebef; --muted: #91a0ab; --line: #28333b; --soft: #1c262d;
+  --accent: #f08a4b; --accent-ink: #1a0f08; --plate: #1b252c; --model: #70b4c9; --ai: #8fb9e0;
+  --ok: #5cc98f; --warn: #e2b54a; --bad: #f2786b; color-scheme: dark }
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 18px 40px }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 16px }
+header { display: grid; gap: 4px }
+h1 { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); margin: 0; letter-spacing: -.01em; text-wrap: balance }
+.sub { color: var(--muted); margin: 0; max-width: 72ch }
+.pipeline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; font-size: 12.5px; color: var(--muted) }
+.pipeline span { border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; background: var(--panel) }
+.grid { display: grid; grid-template-columns: minmax(0, 430px) minmax(0, 1fr); gap: 16px; align-items: start }
+.grid > * { min-width: 0 }
+.panel > * { min-width: 0 }
+#asmBox { display: grid; gap: 8px; min-width: 0 }
+.concepts { display: grid; gap: 8px; margin-top: 8px }
+.concept { display: grid; gap: 6px; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--panel) }
+.concept .sub { margin: 0 }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr) } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0 }
+h2 { font-family: var(--display); font-weight: 600; font-size: 15px; margin: 0 }
+label, .label { font-size: 13px; color: var(--muted) }
+textarea, input[type=number], input[type=text], input[type=password], input[type=tel], input[type=url], input[type=email], select { width: 100%; font: inherit; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px }
+textarea { min-height: 96px; resize: vertical }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.ideas { display: flex; flex-wrap: wrap; gap: 6px }
+.idea { font: inherit; font-size: 12.5px; background: var(--soft); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer }
+.idea:hover { border-color: var(--accent) }
+.btn { font: inherit; font-weight: 600; border-radius: 8px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--soft); color: var(--ink) }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.btn:disabled { opacity: .5; cursor: default }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.bubble { border-inline-start: 3px solid var(--ai); background: var(--soft); border-radius: 8px; padding: 10px 12px; font-size: 14px; min-width: 0; max-width: 100% }
+#thread { min-width: 0 }
+.bubble .who { font-size: 12px; color: var(--ai); font-weight: 600; display: block }
+.q { display: grid; gap: 4px; padding-block: 8px; border-top: 1px solid var(--line) }
+.q:first-child { border-top: 0 }
+.q .text { font-weight: 500 }
+.q .why { font-size: 12.5px; color: var(--muted) }
+.q .inrow { display: flex; gap: 6px; align-items: center }
+.q .unit { font-family: var(--mono); font-size: 12px; color: var(--muted); min-width: 2.5em }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.thumbs { display: flex; flex-wrap: wrap; gap: 6px }
+.thumbs img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line) }
+.offline { display: grid; gap: 6px; border-top: 1px dashed var(--line); padding-top: 10px }
+.filebtn { display: inline-flex; align-items: center; font-weight: 600 }
+textarea.codeedit { font-family: var(--mono); font-size: 12px; direction: ltr; text-align: left; min-height: 320px; white-space: pre; tab-size: 2 }
+.chip { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--soft); color: var(--ink); border-radius: 999px; padding: 2px 10px; cursor: pointer }
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600 }
+ul.list { margin: 0; padding-inline-start: 18px; display: grid; gap: 2px; font-size: 13.5px }
+.steps { display: grid; gap: 4px; font-size: 13.5px }
+.step { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start }
+.step i { font-style: normal; font-family: var(--mono); color: var(--muted); text-align: center }
+.step[data-state="running"] i { color: var(--ai) } .step[data-state="done"] i { color: var(--ok) }
+.step[data-state="warn"] i { color: var(--warn) } .step[data-state="failed"] i { color: var(--bad) }
+.step small { display: block; color: var(--muted); font-size: 12px; overflow-wrap: anywhere }
+.thinking { font-size: 12.5px; color: var(--muted) }
+#viewer { position: relative; height: clamp(320px, 54vh, 560px); border-radius: 8px; overflow: hidden; background: var(--plate) }
+#viewer canvas { display: block; width: 100%; height: 100% }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; color: var(--muted); font-size: 14px }
+.titlebar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px }
+.name { font-family: var(--display); font-weight: 600; font-size: 18px }
+.status { display: inline-flex; align-items: center; font-weight: 600; font-size: 13px; border-radius: 999px; padding: 1px 10px; border: 1px solid currentColor }
+.status.VALIDATED { color: var(--ok) } .status.VALID_WITH_WARNINGS { color: var(--warn) } .status.REPAIR_REQUIRED, .status.INVALID { color: var(--bad) }
+.dims { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.dim { border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; display: grid }
+.dim span { font-size: 12px; color: var(--muted) }
+.dim strong { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; direction: ltr; text-align: right }
+.params { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px }
+.param { display: grid; gap: 2px }
+.param .inrow { display: flex; gap: 4px; align-items: center }
+.param input { font-family: var(--mono); direction: ltr; text-align: left; padding: 5px 8px }
+.param .unit { font-family: var(--mono); font-size: 12px; color: var(--muted); min-width: 2.2em }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line) }
+.tab { font: inherit; font-size: 13.5px; background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 10px; color: var(--muted); cursor: pointer }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600 }
+.tabpanel { font-size: 13.5px; min-width: 0 }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 14px }
+.facts div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); padding-block: 3px }
+.facts b { font-family: var(--mono); font-weight: 500; direction: ltr }
+pre.code { direction: ltr; text-align: left; font-family: var(--mono); font-size: 12px; background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow: auto; max-height: 340px; margin: 0 }
+.ltr { direction: ltr; text-align: left; unicode-bidi: isolate }
+.err { color: var(--bad); border: 1px solid var(--bad); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; overflow-wrap: anywhere }
+.notice { border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; color: var(--muted) }
+.vtools { position: absolute; top: 8px; inset-inline-start: 8px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 2 }
+.vtools .chip { background: var(--panel); box-shadow: 0 1px 2px rgb(0 0 0 / .12) }
+.mbar { font-size: 13.5px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--soft) }
+.mbar b { font-family: var(--mono); font-weight: 600; direction: ltr; unicode-bidi: isolate }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12.5px; color: var(--muted) }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-inline-end: 4px; vertical-align: -1px }
+.tblwrap { overflow-x: auto; max-width: 100% }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px }
+.tbl th, .tbl td { text-align: start; padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap }
+.tbl td:first-child { white-space: normal; min-width: 140px }
+.tbl .num { font-family: var(--mono); direction: ltr; unicode-bidi: isolate }
+.pass { color: var(--ok); font-weight: 600 } .fail { color: var(--bad); font-weight: 600 } .warnc { color: var(--warn); font-weight: 600 }
+.chk { font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 1px 10px; border: 1px solid currentColor }
+.price { display: inline-flex; gap: 6px; align-items: center; font-size: 13px }
+.price input { width: 110px; font-family: var(--mono); direction: ltr; padding: 4px 8px }
+.drwprev { background: #fff; border: 1px solid var(--line); border-radius: 8px; overflow: auto; max-height: 70vh }
+.drwbox { display: grid; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--soft) }
+.drwgrid { display: grid; gap: 6px; max-width: 520px }
+.drwgrid label { display: grid; gap: 4px; font-size: 13px; color: var(--muted) }
+.drwprev svg { display: block; width: 100%; height: auto }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
+</style>
+
+<div class="wrap" dir="rtl">
+  <header>
+    <h1>مصمّم فورما</h1>
+    <p class="sub">صِف ما تريد طباعته بكلماتك. يفهم المصمّم فكرتك، ويسألك ما يحتاجه فقط، ثم يكتب نموذج CAD كاملًا تبنيه آلة هندسية بأبعاد دقيقة بالملليمتر، وتفحصه قبل أن يصلك ملف STL.</p>
+    <div class="pipeline" aria-label="مراحل العمل"><span>فهم الفكرة</span><span>أسئلة دقيقة</span><span>نموذج CAD من Claude</span><span>بناء وفحص الشبكة</span><span>قياس المقاسات آليًا</span><span>فحص قابلية التصنيع</span><span>إصلاح تلقائي</span><span>فحص بصري</span><span>STL جاهز للطباعة</span></div>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="convTitle">
+      <h2 id="convTitle">المحادثة مع المصمّم</h2>
+      <div id="aiOff" class="notice" hidden></div>
+
+      <div id="ideaBox" style="display:grid;gap:8px">
+        <label for="idea">ما الذي تريد طباعته؟ اشرحه كما تشرحه لصديق</label>
+        <textarea id="idea" placeholder="مثال: أريد شيئًا أعلّق عليه سماعة الرأس على حافة مكتبي حتى لا تبقى على الطاولة"></textarea>
+        <div class="row photorow" id="photoRow"><label class="btn filebtn" for="photos">أرفق صورة (اختياري)</label><input type="file" id="photos" accept="image/*" multiple hidden><span class="thinking" id="photoNote">صورة للجهاز أو للشيء الذي ستركّب عليه القطعة تجعل التصميم مطابقًا للواقع.</span></div>
+        <div class="thumbs" id="thumbs"></div>
+        <div class="ideas" id="ideas"></div>
+        <div class="offline" id="offlineStart">
+          <span class="label">أو ابدأ بدون ذكاء اصطناعي — تصاميم بارامترية جاهزة ومقيسة:</span>
+          <div class="ideas" id="starters"></div>
+          <div class="ideas" id="asmStarters"></div>
+          <div class="row"><label class="btn filebtn" for="importDesign">استيراد ملف تصميم (.json)</label><input type="file" id="importDesign" accept=".json,application/json" hidden></div>
+        </div>
+        <div class="row" id="modeRow"><label class="price" for="mode">طريقة التصميم</label><select id="mode" style="width:auto"><option value="single">قطعة واحدة</option><option value="concepts">3 مفاهيم مختلفة للمقارنة</option><option value="assembly">تجميعة من عدة قطع</option></select></div>
+        <div class="row"><button class="btn primary" id="start" type="button">ابدأ التصميم</button></div>
+      </div>
+
+      <div id="thread" style="display:grid;gap:10px"></div>
+
+      <form id="qform" hidden style="display:grid;gap:8px">
+        <div id="questions"></div>
+        <div class="row">
+          <button class="btn primary" type="submit" id="send">أرسل الإجابات</button>
+          <button class="btn" type="button" id="skip">صمّم بالافتراضات المقترحة</button>
+        </div>
+      </form>
+
+      <div id="progress" hidden style="display:grid;gap:6px">
+        <div class="steps" id="steps"></div>
+        <div class="thinking" id="thinking"></div>
+        <div class="row"><button class="btn" type="button" id="stop">إيقاف</button></div>
+      </div>
+
+      <form id="editForm" hidden style="display:grid;gap:8px">
+        <label for="edit">اطلب تعديلًا بكلماتك</label>
+        <textarea id="edit" style="min-height:64px" placeholder="مثال: اجعل الذراع أطول بـ 2 سم وأضف حافة دائرية في نهايتها"></textarea>
+        <div class="row"><button class="btn primary" type="submit" id="applyEdit">عدّل التصميم</button></div>
+      </form>
+      <div class="row" id="restartRow" hidden><button class="btn" type="button" id="restart">فكرة جديدة</button></div>
+
+      <div class="err" id="err" hidden></div>
+    </section>
+
+    <section class="panel" aria-labelledby="resultTitle">
+      <div class="titlebar">
+        <h2 id="resultTitle" class="name">النتيجة</h2>
+        <span style="display:flex;gap:6px;flex-wrap:wrap"><span class="chk" id="checksChip" hidden></span><span class="status" id="status" hidden></span></span>
+      </div>
+      <div id="viewer"><div class="vtools" id="vtools" hidden><button type="button" class="chip" id="measureBtn" aria-pressed="false">قياس مسافة</button><button type="button" class="chip" id="dfmBtn" aria-pressed="false">إظهار مشاكل التصنيع</button><button type="button" class="chip" id="wireBtn" aria-pressed="false">شبكة سلكية</button><button type="button" class="chip" id="orthoBtn" aria-pressed="false">إسقاط متعامد</button><button type="button" class="chip" id="secBtn" aria-pressed="false">مقطع</button><label class="chip" id="secBox" hidden><span id="secLbl">X</span> <input type="range" id="secPos" min="0" max="1000" value="500" aria-label="موضع المقطع"></label><button type="button" class="chip" id="resetBtn">إعادة العرض</button></div><div class="overlay" id="overlay">سيظهر المجسم هنا على سطح طابعة Ender-3 ‏(220 × 220 مم) بعد أن يكتمل التصميم.</div></div>
+      <div class="mbar" id="mbar" hidden></div>
+      <div class="legend" id="legend" hidden><span><i style="background:#d64545"></i>أرق من خطّين للفوهة</span><span><i style="background:#d9b334"></i>جدار رقيق (ضعيف)</span><span><i style="background:#e07b2e"></i>متدلٍّ يحتاج دعامة</span></div>
+      <div class="dims" id="dims"></div>
+      <p id="summary" class="sub" hidden></p>
+      <div id="paramsBox" hidden style="display:grid;gap:6px">
+        <span class="label">أبعاد التصميم — غيّرها وسيُعاد البناء فورًا دون الذكاء الاصطناعي</span>
+        <div class="params" id="params"></div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="download" type="button" hidden>تنزيل STL مع ملف التصميم ‏(zip)</button>
+        <span class="thinking" id="dlnote"></span>
+      </div>
+      <div id="asmBox" hidden></div>
+      <div id="tabsBox" hidden>
+        <div class="tabs" role="tablist" id="tabs"></div>
+        <div class="tabpanel" id="tabpanel"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script id="lib">
+/*LIB*/
+</script>
+<script id="vendor">
+/*VENDOR*/
+</script>
+<script>
+(function () {
+  'use strict';
+  const A = window.FormaAgents, CAD = window.FormaCAD;
+  // Some embedded previews run the page in a sandbox without "allow-forms": the browser then drops every form
+  // submission before the submit event fires. Deliver it ourselves (same handlers, no navigation either way).
+  const fireSubmit = (form) => { if (form.reportValidity && !form.reportValidity()) return; form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })); };
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('button[type=submit], input[type=submit]');
+    const form = b && b.form;
+    if (!form || b.disabled) return;
+    e.preventDefault(); fireSubmit(form);
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (e.key !== 'Enter' || e.isComposing || !t.form || t.tagName !== 'INPUT' || ['button', 'submit', 'checkbox', 'radio', 'file'].includes(t.type)) return;
+    e.preventDefault(); fireSubmit(t.form);
+  }, true);
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, props = {}, ...kids) => { const e = document.createElement(tag); Object.assign(e, props); for (const k of kids) e.append(k); return e; };
+  const MAX_ROUNDS = 2;
+  const IDEAS = [
+    'أريد شيئًا أعلّق عليه سماعة الرأس على حافة مكتبي',
+    'علبة لبوردة أردوينو أونو فيها فتحة للـ USB والكهرباء',
+    'مشط لترتيب كيابل الشحن على طرف الطاولة، 5 كيابل',
+    'مفتاح ربط لصامولة M8',
+    'مزهرية صغيرة بأضلاع بارزة للزينة',
+    'حامل لفرشاة الأسنان ومعجون الأسنان يلصق بالحائط',
+  ];
+
+  const S = { photos: [], idea: '', understanding: '', qa: [], round: 0, pending: null, design: null, result: null, inspection: null, ctl: null, sample: null, images: false, downloads: null, history: [] };
+
+  IDEAS.forEach((t) => $('ideas').append(el('button', { type: 'button', className: 'idea', textContent: t, onclick: () => { $('idea').value = t; $('idea').focus(); } })));
+
+  function showError(msg, retry) {
+    $('err').hidden = !msg; $('err').textContent = msg || '';
+    if (msg && retry) {
+      const b = el('button', { type: 'button', className: 'btn', textContent: 'أعد المحاولة (إجاباتك محفوظة)' });
+      b.style.marginInlineStart = '10px';
+      b.onclick = () => { showError(''); retry(); };
+      $('err').append(b);
+    }
+  }
+  function bubble(who, text, extra) {
+    const b = el('div', { className: 'bubble' }, el('span', { className: 'who', textContent: who }), el('div', { textContent: text }));
+    if (extra) b.append(extra);
+    $('thread').append(b);
+    return b;
+  }
+  function addPhotos(files) {
+    for (const f of Array.from(files || [])) {
+      if (!/^image\//.test(f.type)) continue;
+      if (S.maxImageBytes && f.size > S.maxImageBytes) { showError('الصورة ' + f.name + ' كبيرة جدًا.'); continue; }
+      if (S.photos.length >= (S.maxImages || 4) - 1) break; // keep one slot for the inspector's render
+      S.photos.push(f);
+      const url = URL.createObjectURL(f);
+      $('thumbs').append(el('img', { src: url, alt: 'صورة مرفقة: ' + f.name }));
+    }
+  }
+  $('photos').onchange = () => { addPhotos($('photos').files); $('photos').value = ''; };
+  const ERR = {
+    not_granted: 'لم يُسمح للصفحة باستخدام Claude. أعد فتحها ووافق على الطلب.',
+    sampling_disabled: 'Claude غير متاح لهذا الحساب.',
+    rate_limited: 'وصلت لحد الاستخدام مؤقتًا. انتظر قليلًا ثم أعد المحاولة.',
+    session_expired: 'انتهت الجلسة. سجّل الدخول من جديد.',
+    invalid_json: 'جاء رد المصمّم بصيغة غير مكتملة. أعد المحاولة.',
+    refused: 'رفض المصمّم هذا الطلب. غيّر صياغته.',
+    upstream_error: 'انقطع الاتصال بـ Claude أثناء العمل (حتى بعد محاولة ثانية تلقائية).',
+  };
+
+  // ------------------------------------------------------------------ Claude
+  async function ask(prompt, opts = {}) {
+    if (!S.sample) throw { code: 'not_granted', message: 'sample unavailable' };
+    S.ctl = new AbortController();
+    const label = { clarify: 'يفهم فكرتك', design: 'يكتب نموذج CAD', repair: 'يصلح النموذج', inspect: 'يفحص الصور', fix: 'يطبّق ملاحظات الفحص', revise: 'يعدّل التصميم' }[opts.label] || 'يفكّر';
+    $('thinking').textContent = `Claude ${label}… قد يستغرق ذلك دقيقة أو أكثر للتصاميم المعقدة.`;
+    const o = { signal: S.ctl.signal, cache: false, onText: ({ text }) => { $('thinking').textContent = `Claude ${label}… ${text.length.toLocaleString('en')} حرفًا`; } };
+    if (opts.modelTier) o.modelTier = opts.modelTier;
+    if (opts.effort) o.effort = opts.effort;
+    const withPhotos = ['clarify', 'design', 'repair', 'revise', 'fix'].includes(opts.label);
+    const imgs = [...(opts.images || []), ...((withPhotos || opts.label === 'inspect') ? S.photos : [])].slice(0, S.maxImages || 4);
+    if (imgs.length && S.images) o.images = imgs;
+    try { return await S.sample.json(prompt, o); }
+    catch (e) {
+      // One fallback (never a loop): a dropped connection or empty reply on a long
+      // design call is retried once with less thinking, so text starts streaming sooner.
+      const heavy = ['design', 'repair', 'fix', 'revise'].includes(opts.label);
+      if (heavy && e && (e.code === 'upstream_error' || e.code === 'empty_completion' || !ERR[e.code]) && e.code !== 'cancelled' && !opts._retried) {
+        $('thinking').textContent = `انقطع الاتصال أثناء الكتابة — محاولة ثانية أسرع…`;
+        return ask(prompt, { ...opts, modelTier: 'default', effort: 'low', _retried: true });
+      }
+      throw e;
+    }
+    finally { if (!opts._retried) $('thinking').textContent = ''; }
+  }
+  $('stop').onclick = () => S.ctl && S.ctl.abort();
+
+  // ------------------------------------------------------------------ build in a worker (keeps the page responsive, can be stopped)
+  const workerSrc = $('lib').textContent + `
+    self.onmessage = async (ev) => {
+      try {
+        if (ev.data.job === 'assembly') {
+          const asm = await FormaAssembly.assemble(ev.data.spec, (d, v) => FormaCAD.generateDesign(d, v));
+          const parts = asm.order.map((id) => {
+            const P = asm.parts[id], pos = new Float32Array(P.mesh.faces.length * 9);
+            P.mesh.faces.forEach((f, i) => f.forEach((vi, k) => pos.set(P.mesh.vertices[vi], i * 9 + k * 3)));
+            return { id, name_ar: P.name_ar, positions: pos, stl: P.result.stl, size_mm: P.result.size_mm, status: P.result.status, qty: P.qty, material: P.material };
+          });
+          const report = { name_ar: asm.name_ar, order: asm.order, constraints: asm.constraints, interference: asm.interference, bom: asm.bom, totals: asm.totals, size_mm: asm.size_mm, ok: asm.ok };
+          return self.postMessage({ ok: true, report, parts, exploded: FormaAssembly.exploded(asm, 1), threemf: FormaExport.to3MF(FormaAssembly.placedParts(asm), { title: asm.name_ar }) });
+        }
+        const r = await FormaCAD.generateDesign(ev.data.design, ev.data.overrides || {});
+        const job = ev.data.job;
+        if (job === 'assembly') return; // handled below (needs several builds)
+        if (job === 'drawing') {
+          const L = FormaDrawing.layout(r.mesh, Object.assign({ checks: r.analysis.checks }, ev.data.meta || {}), ev.data.opts || {});
+          return self.postMessage({ ok: true, layout: L });
+        }
+        if (job === 'dfm') { // manufacturability with a printer's measured limits (calibration profile)
+          const d = FormaAnalysis.dfm(r.mesh, ev.data.opts || {});
+          return self.postMessage({ ok: true, issues: d.issues, stats: d.stats });
+        }
+        if (job === 'export') {
+          const parts = [{ name: (ev.data.meta && ev.data.meta.title) || 'part', mesh: r.mesh }], f = ev.data.opts.format;
+          const data = f === 'obj' ? new TextEncoder().encode(FormaExport.toOBJ(parts)) : f === 'glb' ? FormaExport.toGLB(parts) : f === '3mf' ? FormaExport.to3MF(parts, ev.data.meta || {}) : r.stl;
+          return self.postMessage({ ok: true, data, triangles: r.triangles, size_mm: r.size_mm });
+        }
+        const v = new Float32Array(r.mesh.faces.length * 9);
+        r.mesh.faces.forEach((f, i) => f.forEach((vi, k) => v.set(r.mesh.vertices[vi], i * 9 + k * 3)));
+        const an = r.analysis;
+        self.postMessage({ ok: true, positions: v, stl: r.stl, meta: { status: r.status, size_mm: r.size_mm, triangles: r.triangles, validation: r.validation, post_export_validation: r.post_export_validation, transforms: r.transforms, params: r.params, analysis: an, cad_stats: r.cad_stats, duration_ms: r.duration_ms, signature: FormaConcepts.signature(r.mesh) } }, [v.buffer, r.stl.buffer, an.dfm.flags.buffer]);
+      } catch (e) { self.postMessage({ ok: false, error: { code: e.code || 'ERROR', message: e.message } }); }
+    };`;
+  const workerUrl = URL.createObjectURL(new Blob([workerSrc], { type: 'text/javascript' }));
+  function runJob(msg, ms = 120000) {
+    return new Promise((resolve, reject) => {
+      const w = new Worker(workerUrl);
+      const timer = setTimeout(() => { w.terminate(); reject({ code: 'TIMEOUT', message: 'took longer than ' + ms / 1000 + ' s' }); }, ms);
+      w.onmessage = (ev) => { clearTimeout(timer); w.terminate(); ev.data.ok ? resolve(ev.data) : reject(ev.data.error); };
+      w.onerror = (e) => { clearTimeout(timer); w.terminate(); reject({ code: 'ERROR', message: e.message || 'worker error' }); };
+      w.postMessage(msg);
+    });
+  }
+  function build(design, overrides) {
+    return new Promise((resolve, reject) => {
+      const w = new Worker(workerUrl);
+      const timer = setTimeout(() => { w.terminate(); reject({ code: 'TOO_COMPLEX', message: 'Building took longer than 90 s; simplify the model (fewer booleans, lower segment counts).' }); }, 90000);
+      w.onmessage = (ev) => { clearTimeout(timer); w.terminate(); ev.data.ok ? resolve({ ...ev.data.meta, positions: ev.data.positions, stl: ev.data.stl }) : reject(ev.data.error); };
+      w.onerror = (e) => { clearTimeout(timer); w.terminate(); reject({ code: 'ERROR', message: e.message || 'worker error' }); };
+      w.postMessage({ design, overrides });
+    });
+  }
+
+  // ------------------------------------------------------------------ viewer (built-in WebGL, works offline) + 4-view render for the inspector
+  let viewer = null, hasModel = false;
+  function initViewer() {
+    try { viewer = FormaViewer.create($('viewer'), { bed: [220, 220, 250] }); viewer.setBaseColor(modelColor()); }
+    catch (e) { viewer = null; $('overlay').textContent = 'هذا المتصفح لا يدعم العرض ثلاثي الأبعاد (WebGL)؛ الأبعاد والتقرير والتنزيل تعمل.'; return; }
+    initTools();
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq && mq.addEventListener) mq.addEventListener('change', () => { viewer.setBaseColor(modelColor()); paint(); });
+  }
+  function modelColor() { return getComputedStyle(document.documentElement).getPropertyValue('--model').trim() || '#3d7c90'; }
+  const V = { dfm: false, measure: false, pts: [] };
+  const DFM_COLORS = [null, [0.88, 0.48, 0.18], [0.85, 0.7, 0.2], [0.84, 0.27, 0.27]];
+  function paint() {
+    if (!viewer || !hasModel) return;
+    const flags = S.result && S.result.analysis && S.result.analysis.dfm.flags;
+    if (V.dfm && flags) {
+      const base = (() => { const c = document.createElement('canvas').getContext('2d'); c.fillStyle = modelColor(); const h = c.fillStyle; return /^#/.test(h) ? [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255) : [0.24, 0.49, 0.56]; })();
+      viewer.setFaceColors(flags, [base, ...DFM_COLORS.slice(1)]);
+    } else viewer.setFaceColors(null);
+    $('legend').hidden = !V.dfm;
+    $('dfmBtn').setAttribute('aria-pressed', String(V.dfm));
+  }
+  function clearMeasure() {
+    V.pts = []; if (viewer) viewer.setMarkers([]);
+    $('mbar').hidden = !V.measure; $('mbar').textContent = V.measure ? 'اضغط على نقطتين على المجسم لقياس المسافة بينهما (تلتصق بالرؤوس القريبة).' : '';
+  }
+  const dist3 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  function pick(ev) {
+    if (!viewer || !hasModel) return;
+    const h = viewer.pick(ev.clientX, ev.clientY);
+    if (!h) return;
+    const s = S.result.size_mm, size = Math.max(s.x, s.y, s.z);
+    let p = h.point, snapped = false;
+    for (const v of h.verts) if (dist3(v, h.point) < Math.max(0.8, size * 0.02) && (!snapped || dist3(v, h.point) < dist3(p, h.point))) { p = v; snapped = true; }
+    if (V.pts.length === 2) clearMeasure();
+    V.pts.push({ p, snapped });
+    viewer.setMarkers(V.pts.map((x) => x.p));
+    if (V.pts.length === 2) {
+      const [a, b] = V.pts.map((x) => x.p);
+      const f = (x) => Math.abs(x).toFixed(2);
+      $('mbar').textContent = '';
+      $('mbar').append('المسافة: ', el('b', { textContent: dist3(a, b).toFixed(2) + ' mm' }), '  —  ', el('b', { textContent: `ΔX ${f(b[0] - a[0])}  ΔY ${f(b[1] - a[1])}  ΔZ ${f(b[2] - a[2])}` }),
+        V.pts.every((x) => x.snapped) ? ' (بين رأسين من الشبكة)' : ' (نقطة على السطح)');
+    } else { $('mbar').textContent = 'اختر النقطة الثانية…'; }
+  }
+  function initTools() {
+    const c = viewer.canvas; let down = null;
+    c.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; });
+    c.addEventListener('pointerup', (e) => { if (V.measure && down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) < 5) pick(e); down = null; });
+    $('measureBtn').onclick = () => { V.measure = !V.measure; $('measureBtn').setAttribute('aria-pressed', String(V.measure)); clearMeasure(); };
+    $('dfmBtn').onclick = () => { V.dfm = !V.dfm; paint(); };
+    $('wireBtn').onclick = () => { const on = $('wireBtn').getAttribute('aria-pressed') !== 'true'; viewer.setWireframe(on); $('wireBtn').setAttribute('aria-pressed', String(on)); };
+    $('orthoBtn').onclick = () => { viewer.setOrtho(!viewer.ortho); $('orthoBtn').setAttribute('aria-pressed', String(viewer.ortho)); };
+    // section: off -> X -> Y -> Z -> off; the slider moves the cut plane across the part's own extent
+    const secAxes = [null, 'x', 'y', 'z'];
+    const applySection = () => {
+      const ax = secAxes[V.secIdx || 0], b = viewer.bounds();
+      $('secBox').hidden = !ax; $('secBtn').setAttribute('aria-pressed', String(!!ax));
+      if (!ax || !b) { viewer.setSection(null); return; }
+      const a = { x: 0, y: 1, z: 2 }[ax], at = b.lo[a] + (b.hi[a] - b.lo[a]) * Number($('secPos').value) / 1000;
+      $('secLbl').textContent = `${ax.toUpperCase()} ${(at - b.lo[a]).toFixed(1)} mm`;
+      viewer.setSection(ax, at);
+    };
+    $('secBtn').onclick = () => { V.secIdx = ((V.secIdx || 0) + 1) % 4; applySection(); };
+    $('secPos').oninput = applySection;
+    V.applySection = applySection;
+    $('resetBtn').onclick = () => {
+      V.secIdx = 0; applySection(); viewer.setOrtho(false); viewer.setWireframe(false);
+      ['wireBtn', 'orthoBtn'].forEach((id) => $(id).setAttribute('aria-pressed', 'false'));
+      if (S.result) viewer.fit(S.result.size_mm);
+    };
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && V.measure) clearMeasure(); });
+  }
+  function clearModel() { hasModel = false; if (viewer) { viewer.setMesh(null); viewer.setMarkers([]); } }
+  function showModel(result, refit) {
+    if (!viewer) return;
+    $('overlay').hidden = true; $('vtools').hidden = false;
+    clearMeasure();
+    const P = result.positions; let lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
+    for (let i = 0; i < P.length; i += 3) { lo[0] = Math.min(lo[0], P[i]); hi[0] = Math.max(hi[0], P[i]); lo[1] = Math.min(lo[1], P[i + 1]); hi[1] = Math.max(hi[1], P[i + 1]); }
+    viewer.setMesh(P, [110 - (lo[0] + hi[0]) / 2, 110 - (lo[1] + hi[1]) / 2, 0]);
+    if (V.applySection) V.applySection(); // a rebuilt part keeps the section at the same relative position
+    hasModel = true;
+    paint();
+    if (refit) viewer.fit(result.size_mm);
+  }
+  async function renderViews(result) {
+    if (!viewer || !S.images) return null;
+    return FormaViewer.snapshot(result.positions, 512);
+  }
+
+  // ------------------------------------------------------------------ flow
+  async function startIdea() {
+    showError('');
+    const idea = $('idea').value.trim();
+    if (idea.length < 4) { showError('اكتب فكرتك ببضع كلمات على الأقل.'); return; }
+    Object.assign(S, { idea, understanding: '', qa: [], round: 0, design: null, result: null, inspection: null, history: [], offline: null });
+    $('thread').textContent = ''; $('ideaBox').hidden = true; $('editForm').hidden = true;
+    bubble('أنت', idea);
+    if (!S.sample) return offlineUnderstand(idea);
+    await clarify();
+  }
+
+  // ------------------------------------------------------------------ designer without a language model
+  // Understands the idea by matching it to the parametric families (keywords, Arabic/English), reads the
+  // numbers the customer wrote (engine text parser + aliases), asks for every dimension, then builds.
+  const normAr = (t) => String(t || '').toLowerCase().replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/٫/g, '.');
+  const ALIASES = {
+    headphone_hook: { desk_t: ['سمك', 'سماك', 'المكتب'], width: ['عرض'], arm_len: ['ذراع'], clamp_depth: ['عمق'] },
+    hex_wrench: { handle_l: ['طول'] },
+    cable_comb: { cable_d: ['قطر'], pitch: ['مسافه'] },
+    vase: { h: ['ارتفاع', 'طول'] },
+  };
+  const NUT_AF = { 3: 5.5, 4: 7, 5: 8, 6: 10, 8: 13, 10: 16, 12: 18 };
+  function numberAfter(text, alias) {
+    const i = text.indexOf(normAr(alias)); if (i < 0) return null;
+    const m = text.slice(i + normAr(alias).length).match(/^[^0-9]{0,22}?(\d+(?:\.\d+)?)\s*(مم|ملم|ملي|mm|سم|سنتي|cm|درجه|°)?/);
+    if (!m) return null;
+    let v = parseFloat(m[1]); if (m[2] && /سم|سنتي|cm/.test(m[2])) v *= 10;
+    return { value: v, note: m[0].trim() };
+  }
+  function offlineMatch(idea) {
+    const t = normAr(idea), list = FormaStarters.STARTERS;
+    let best = null, score = 0;
+    for (const st of list) { let sc = 0; for (const k of st.keywords || []) if (t.includes(normAr(k))) sc += normAr(k).length; if (sc > score) { score = sc; best = st; } }
+    let parsed = null; try { parsed = Engine3D.parse(idea); } catch (e) { /* no generic family */ }
+    if (!best && parsed && parsed.template) best = list.find((s) => s.engine === parsed.template) || null;
+    if (!best) return null;
+    const read = {}; let nameAr = null;
+    if (parsed && best.engine && parsed.template === best.engine) for (const [k, p] of Object.entries(parsed.params || {})) if (p.source === 'prompt') read[k] = { value: p.value, note: p.note || '' };
+    for (const [name, aliases] of Object.entries(ALIASES[best.key] || {})) if (!read[name]) for (const a of aliases) { const r = numberAfter(t, a); if (r) { read[name] = r; break; } }
+    if (best.key === 'hex_wrench') { const m = t.match(/m\s*(\d+)/); if (m && NUT_AF[m[1]]) { read.af = { value: NUT_AF[m[1]] + 0.2, note: `صامولة M${m[1]}: ${NUT_AF[m[1]]} مم بين الأوجه + 0.2 خلوص` }; read.head_d = { value: Math.max(26, Math.round((NUT_AF[m[1]] + 0.2) * 2)), note: 'رأس يتسع للسداسي بجدار كافٍ' }; nameAr = `مفتاح صامولة M${m[1]}`; } }
+    if (best.key === 'cable_comb') { const m = t.match(/(\d+)\s*(كيبل|كيابل|اسلاك|سلك|cables?)/); if (m) read.n = { value: parseInt(m[1], 10), note: m[0] }; }
+    if (best.key === 'phone_case' && !(/17/.test(t) && /(ماكس|max)/.test(t))) {
+      nameAr = 'حافظة هاتف';
+      for (const k of ['phone_l', 'phone_w', 'phone_t', 'cam_h', 'cam_top', 'lb_from_top', 'rb_from_top']) delete read[k];
+      return { starter: { ...best, design: { ...best.design, name_ar: nameAr, summary_ar: 'حافظة بمقاس هاتفك مع فتحة الكاميرا والأزرار والشحن. القيم الافتراضية لآيفون 17 برو ماكس — قِس هاتفك بالمسطرة وأدخل مقاساته.', assumptions_ar: ['كل المقاسات يجب أن تُقاس على هاتفك؛ القيم الافتراضية لآيفون 17 برو ماكس.'] } }, read, measure: true };
+    }
+    return { starter: nameAr ? { ...best, design: { ...best.design, name_ar: nameAr, summary_ar: best.design.summary_ar.replace('13 مم', String(read.af.value - 0.2) + ' مم').replace('M8', nameAr.split(' ').pop()) } } : best, read };
+  }
+  function offlineUnderstand(idea) {
+    const m = offlineMatch(idea);
+    if (!m) {
+      const chips = el('div', { className: 'ideas' }, ...FormaStarters.STARTERS.map((st) => el('button', { type: 'button', className: 'idea', textContent: st.design.name_ar, onclick: () => loadDesign(st.design, idea, 'تصميم جاهز') })));
+      bubble('المصمّم (بدون إنترنت)', 'لم أتعرّف على هذا الشكل. بدون نموذج ذكاء اصطناعي أصمّم الأنواع التالية فقط، اختر الأقرب وعدّل أبعاده، أو فعّل المصمّم الذكي (Claude أونلاين أو Ollama محليًا) للأفكار الحرة:', chips);
+      $('ideaBox').hidden = false;
+      return;
+    }
+    const d = m.starter.design;
+    S.offline = { starter: m.starter };
+    S.understanding = `${d.name_ar}: ${d.summary_ar}`;
+    const readList = Object.entries(m.read).map(([k, r]) => { const p = d.parameters.find((x) => x.name === k); return p ? `${p.label_ar} = ${r.value}` : null; }).filter(Boolean);
+    bubble('المصمّم (بدون إنترنت)', `فهمت أنك تريد: ${d.name_ar}. ${d.summary_ar}` + (readList.length ? ` قرأت من كلامك: ${readList.join('، ')}.` : '') + ' راجع المقاسات التالية وعدّل ما يلزم:');
+    S.pending = d.parameters.map((p) => ({ question_ar: p.label_ar + (p.unit === 'mm' ? ' (مم)' : p.unit === 'deg' ? ' (درجة)' : ''), why_ar: m.read[p.name] ? 'قرأتها من وصفك' : m.measure && p.unit === 'mm' ? 'قِسها على هاتفك بالمسطرة' : `قيمة مقترحة — المسموح ${p.min ?? '?'} إلى ${p.max ?? '?'}`, kind: 'number', unit: p.unit, suggested: String(m.read[p.name] ? m.read[p.name].value : p.value), name: p.name }));
+    renderQuestions(S.pending);
+  }
+  async function offlineBuild(useSuggested) {
+    const d = JSON.parse(JSON.stringify(S.offline.starter.design)), clamped = [];
+    S.pending.forEach((q, i) => {
+      const p = d.parameters.find((x) => x.name === q.name);
+      let v = parseFloat(useSuggested ? q.suggested : $('q_' + i).value);
+      if (!Number.isFinite(v)) v = p.value;
+      if (p.min !== undefined && v < p.min) { clamped.push(`${p.label_ar} رُفع إلى ${p.min}`); v = p.min; }
+      if (p.max !== undefined && v > p.max) { clamped.push(`${p.label_ar} خُفّض إلى ${p.max}`); v = p.max; }
+      p.value = p.unit === 'count' ? Math.round(v) : v;
+    });
+    collectAnswers(useSuggested);
+    S.offline = null;
+    if (clamped.length) bubble('المصمّم (بدون إنترنت)', 'عدّلت قيمًا خارج الحدود الآمنة للطباعة: ' + clamped.join('، ') + '.');
+    await loadDesign(d, S.idea, 'صُمّم بدون إنترنت', true);
+  }
+
+  async function clarify() {
+    S.round++;
+    setProgress([['clarify', 'فهم الفكرة وتحديد الأسئلة']]);
+    step('clarify', 'running');
+    let r;
+    try { r = await ask(A.clarifyPrompt(S.idea, S.qa, S.round, MAX_ROUNDS), { label: 'clarify' }); }
+    catch (e) { return fail(e, () => { $('ideaBox').hidden = false; }); }
+    step('clarify', 'done');
+    $('progress').hidden = true;
+    S.understanding = r.understanding_ar || S.understanding;
+    const assumptions = (r.assumptions_ar || []).length ? el('ul', { className: 'list' }, ...(r.assumptions_ar || []).map((t) => el('li', { textContent: 'افتراض: ' + t }))) : null;
+    bubble('المصمّم', r.understanding_ar || '', assumptions);
+    const qs = Array.isArray(r.questions) ? r.questions.slice(0, 6) : [];
+    if (r.ready || !qs.length || S.round >= MAX_ROUNDS + 1) return runDesign();
+    S.pending = qs;
+    renderQuestions(qs);
+  }
+
+  function renderQuestions(qs) {
+    const box = $('questions'); box.textContent = '';
+    qs.forEach((q, i) => {
+      const id = 'q_' + i;
+      const wrap = el('div', { className: 'q' }, el('label', { htmlFor: id, className: 'text', textContent: q.question_ar || '' }));
+      if (q.why_ar) wrap.append(el('span', { className: 'why', textContent: q.why_ar }));
+      const opts = Array.isArray(q.options_ar) ? q.options_ar : [];
+      let input;
+      if (q.kind === 'photo') {
+        input = el('input', { type: 'text', id, value: S.photos.length ? 'أرفقت صورة' : '' }); input.hidden = true;
+        const lab = el('label', { className: 'btn filebtn', htmlFor: id + '_f', textContent: S.photos.length ? `أُرفقت ${S.photos.length} صورة — أضف أخرى` : 'أرفق صورة' });
+        const f = el('input', { type: 'file', id: id + '_f', accept: 'image/*', multiple: true }); f.hidden = true;
+        f.onchange = () => { addPhotos(f.files); input.value = S.photos.length ? 'أرفقت صورة' : ''; lab.textContent = `أُرفقت ${S.photos.length} صورة`; };
+        wrap.append(lab, f, input);
+      } else if ((q.kind === 'choice' && opts.length) || q.kind === 'boolean') {
+        const list = q.kind === 'boolean' ? ['نعم', 'لا'] : opts;
+        input = el('input', { type: 'text', id, value: q.suggested ?? '' }); input.hidden = true;
+        const chips = el('div', { className: 'chips', role: 'group' });
+        list.forEach((o) => { const c = el('button', { type: 'button', className: 'chip', textContent: o }); c.setAttribute('aria-pressed', String(String(q.suggested ?? '') === o)); c.onclick = () => { input.value = o; chips.querySelectorAll('.chip').forEach((x) => x.setAttribute('aria-pressed', String(x === c))); }; chips.append(c); });
+        wrap.append(chips, input);
+      } else {
+        input = el('input', { type: q.kind === 'number' ? 'number' : 'text', id, value: q.suggested ?? '', step: 'any' });
+        const unit = q.unit && q.unit !== 'null' ? ({ mm: 'مم', deg: '°', count: 'عدد', kg: 'كغ' }[q.unit] || q.unit) : '';
+        wrap.append(el('div', { className: 'inrow' }, input, el('span', { className: 'unit', textContent: unit })));
+      }
+      box.append(wrap);
+    });
+    $('qform').hidden = false;
+    $('qform').querySelector('input')?.focus();
+  }
+
+  function collectAnswers(useSuggested) {
+    S.pending.forEach((q, i) => {
+      const v = useSuggested ? String(q.suggested ?? '') : $('q_' + i).value.trim();
+      const unit = q.unit && q.unit !== 'null' ? ' ' + q.unit : '';
+      S.qa.push({ question: q.question_ar, answer: (v || 'اختر ما تراه مناسبًا') + (v && q.kind === 'number' ? unit : '') });
+    });
+    const answered = el('ul', { className: 'list' }, ...S.qa.slice(-S.pending.length).map((x) => el('li', { textContent: `${x.question} — ${x.answer}` })));
+    bubble('أنت', useSuggested ? 'وافقت على الاقتراحات:' : 'إجاباتي:', answered);
+    S.pending = null; $('qform').hidden = true;
+  }
+  $('qform').onsubmit = (e) => { e.preventDefault(); if (S.offline) return offlineBuild(false); collectAnswers(false); S.round >= MAX_ROUNDS ? runDesign() : clarify(); };
+  $('skip').onclick = () => { if (S.offline) return offlineBuild(true); collectAnswers(true); runDesign(); };
+
+  const STEP_NAMES = { concepts: 'اقتراح مفاهيم مختلفة', clarify: 'فهم الفكرة وتحديد الأسئلة', design: 'كتابة نموذج CAD', build: 'بناء الهندسة وفحص الشبكة', repair: 'إصلاح النموذج تلقائيًا', inspect: 'فحص بصري للنتيجة' };
+  function setProgress(list) {
+    $('steps').textContent = '';
+    list.forEach(([id, name]) => $('steps').append(el('div', { className: 'step', id: 'st_' + id }, el('i', { textContent: '○' }), el('div', {}, name, el('small')))));
+    $('progress').hidden = false;
+  }
+  function step(id, state, info, prefix) {
+    let s = $('st_' + id);
+    if (!s) { $('steps').append(s = el('div', { className: 'step', id: 'st_' + id }, el('i'), el('div', {}, (prefix || '') + (STEP_NAMES[id] || STEP_NAMES[id.replace(/_\d+$/, '')] || id), el('small')))); }
+    s.dataset.state = state;
+    s.querySelector('i').textContent = { running: '●', done: '✓', warn: '!', failed: '×' }[state] || '○';
+    if (info !== undefined) s.querySelector('small').textContent = String(info || '');
+  }
+
+  const brief = () => A.briefOf(S.idea, S.understanding, S.qa) + (S.photos.length && S.images ? `\n\nThe customer attached ${S.photos.length} photo(s) of the object/device; they are included with this message. Use them for layout, proportions and feature positions; take absolute sizes from measurements or verified dimensions, never from the photo scale alone.` : '');
+
+  async function runDesign() {
+    const mode = $('mode').value;
+    if (mode === 'concepts') return runConcepts();
+    if (mode === 'assembly') return runAssembly();
+    setProgress([['design', STEP_NAMES.design], ['build', STEP_NAMES.build]]);
+    let out;
+    try {
+      out = await A.designLoop({ ask, build, render: S.images ? renderViews : null, onStep: step }, brief(), { maxRepairs: 2 });
+    } catch (e) { return fail(e, () => { $('editForm').hidden = !S.design; }, runDesign); }
+    finishDesign(out, true);
+  }
+
+  // ------------------------------------------------------------------ several concepts, compared on measured numbers
+  async function runConcepts() {
+    setProgress([['concepts', STEP_NAMES.concepts]]);
+    let out;
+    try { out = await A.conceptsLoop({ ask, build, onStep: step, distinctness: FormaConcepts.distinctness }, brief(), { n: 3 }); }
+    catch (e) { return fail(e, null, runConcepts); }
+    $('progress').hidden = true;
+    const rows = FormaConcepts.table(out.concepts), dist = out.distinctness || { similarTo: [] };
+    const name = (i) => out.concepts[i].concept.title_ar;
+    S.conceptRun = (S.conceptRun || 0) + 1;
+    const box = el('div', { id: 'concepts_' + S.conceptRun, className: 'concepts' });
+    out.concepts.forEach((c, i) => {
+      const r = rows[i], sim = dist.similarTo[i];
+      const pick = el('button', { type: 'button', className: 'btn' + (sim == null ? ' primary' : ''), textContent: 'اختر هذا المفهوم', disabled: !c.result });
+      pick.onclick = () => { box.querySelectorAll('button').forEach((b) => (b.disabled = true)); bubble('أنت', 'اخترت: ' + c.concept.title_ar); finishDesign({ design: c.design, result: c.result, inspection: null }, true); };
+      box.append(el('article', { className: 'concept' },
+        el('div', { className: 'ptitle' }, el('b', { textContent: `${i + 1}. ${c.concept.title_ar}` }), el('span', { className: sim == null ? 'pass' : 'warnc', textContent: sim == null ? 'مختلف' : `مشابه لـ «${name(sim)}»` })),
+        el('p', { className: 'sub', textContent: c.concept.approach_ar }),
+        (c.concept.tradeoffs_ar || []).length ? el('p', { className: 'sub', textContent: c.concept.tradeoffs_ar.join(' · ') }) : '',
+        r ? factRow([['الأبعاد', `${r.size_mm.x.toFixed(1)}×${r.size_mm.y.toFixed(1)}×${r.size_mm.z.toFixed(1)} مم`], ['الوزن', r.mass_g != null ? r.mass_g + ' g' : '—'], ['زمن الطباعة', r.time_min != null ? fmtTime(r.time_min) : '—'], ['المقاسات', r.checks], ['التصنيع', r.dfm_errors ? `${r.dfm_errors} مشكلة` : r.dfm_warnings ? `${r.dfm_warnings} تحذير` : 'سليمة']])
+          : el('p', { className: 'fail', textContent: 'تعذّر بناؤه: ' + ((c.error && c.error.message) || '') }),
+        el('div', { className: 'row' }, pick)));
+    });
+    bubble('المصمّم', `صمّمت ${out.concepts.length} مفاهيم وبنيت كل واحد وقسته. التميّز يقارن الشكل نفسه (تداخل الحجوم) والأبعاد، لا الوصف. اختر واحدًا لتكمل عليه.`, box);
+    if (dist.distinctCount < out.concepts.length) bubble('المصمّم', 'تنبيه: بعض المفاهيم جاءت متشابهة هندسيًا رغم اختلاف الوصف — يمكنك إعادة المحاولة بصياغة أوضح.');
+  }
+
+  // ------------------------------------------------------------------ assemblies
+  const PART_COLORS = [[0.24, 0.49, 0.56], [0.85, 0.55, 0.2], [0.45, 0.62, 0.3], [0.6, 0.42, 0.7], [0.75, 0.35, 0.35], [0.35, 0.45, 0.75]];
+  async function evaluateAssembly(spec) { const out = await runJob({ job: 'assembly', spec }, 240000); return out; }
+  async function runAssembly() {
+    setProgress([['design', 'تصميم القطع وطريقة تجميعها'], ['build', 'بناء القطع وحل القيود وفحص التداخل']]);
+    let res;
+    let last = null;
+    try { res = await A.assemblyLoop({ ask, onStep: step, assemble: async (spec) => { last = await evaluateAssembly(spec); return last.report; } }, brief(), { maxRepairs: 1 }); }
+    catch (e) { return fail(e, null, runAssembly); }
+    $('progress').hidden = true;
+    if (!last) { showError('تعذّر بناء التجميعة: ' + ((res.error && res.error.message) || '')); return; }
+    showAssembly(res.spec, last);
+  }
+  async function loadAssembly(spec, label) {
+    showError(''); $('ideaBox').hidden = true;
+    bubble('أنت', (spec.name_ar || 'تجميعة') + ' — ' + label);
+    setProgress([['build', 'بناء القطع وحل القيود وفحص التداخل']]); step('build', 'running');
+    try { const out = await evaluateAssembly(spec); step('build', out.report.ok ? 'done' : 'warn'); $('progress').hidden = true; showAssembly(spec, out); }
+    catch (e) { $('progress').hidden = true; showError('تعذّر بناء التجميعة: ' + (e.message || e.code)); $('ideaBox').hidden = false; }
+  }
+  function asmPositions(out, t) {
+    const n = out.parts.reduce((a, p) => a + p.positions.length, 0), P = new Float32Array(n), flags = new Uint8Array(n / 9);
+    let o = 0, f = 0;
+    out.parts.forEach((p, i) => {
+      const d = out.exploded[p.id] || [0, 0, 0];
+      for (let k = 0; k < p.positions.length; k += 3) { P[o + k] = p.positions[k] + d[0] * t; P[o + k + 1] = p.positions[k + 1] + d[1] * t; P[o + k + 2] = p.positions[k + 2] + d[2] * t; }
+      flags.fill(i % PART_COLORS.length, f, f + p.positions.length / 9);
+      o += p.positions.length; f += p.positions.length / 9;
+    });
+    return { P, flags };
+  }
+  function drawAssembly(out, t, refit) {
+    if (!viewer) return;
+    const { P, flags } = asmPositions(out, t);
+    let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < P.length; i += 3) for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], P[i + a]); hi[a] = Math.max(hi[a], P[i + a]); }
+    $('overlay').hidden = true; $('vtools').hidden = true;
+    viewer.setMesh(P, [110 - (lo[0] + hi[0]) / 2, 110 - (lo[1] + hi[1]) / 2, -lo[2]]);
+    viewer.setFaceColors(flags, PART_COLORS);
+    hasModel = false; // measuring and DFM colouring are for single parts
+    if (refit) viewer.fit({ x: hi[0] - lo[0], y: hi[1] - lo[1], z: hi[2] - lo[2] });
+  }
+  function showAssembly(spec, out) {
+    S.design = null; S.result = null; S.asm = { spec, out };
+    const R = out.report;
+    $('tabsBox').hidden = true; $('paramsBox').hidden = true; $('download').hidden = true; $('editForm').hidden = true; $('restartRow').hidden = false;
+    $('resultTitle').textContent = R.name_ar;
+    $('status').hidden = false; $('status').className = 'status ' + (R.ok ? 'VALIDATED' : 'REPAIR_REQUIRED'); $('status').textContent = R.ok ? 'التجميعة سليمة' : 'في التجميعة مشاكل';
+    $('checksChip').hidden = true;
+    $('dims').textContent = '';
+    [['العرض X', R.size_mm[0]], ['العمق Y', R.size_mm[1]], ['الارتفاع Z', R.size_mm[2]]].forEach(([l, v]) => $('dims').append(el('div', { className: 'dim' }, el('span', { textContent: l }), el('strong', { textContent: v.toFixed(2) + ' mm' }))));
+    $('summary').hidden = !spec.summary_ar; $('summary').textContent = spec.summary_ar || '';
+    drawAssembly(out, 0, true);
+    const box = $('asmBox'); box.hidden = false; box.textContent = '';
+    const slider = el('input', { type: 'range', min: 0, max: 100, value: 0, id: 'explode' });
+    slider.oninput = () => drawAssembly(out, slider.value / 100, false);
+    box.append(el('label', { className: 'price', htmlFor: 'explode' }, 'منظر مفكّك ', slider));
+    box.append(el('div', { className: 'legend' }, ...out.parts.map((p, i) => el('span', {}, el('i', { style: `background:rgb(${PART_COLORS[i % PART_COLORS.length].map((c) => Math.round(c * 255)).join(',')})` }), `${p.name_ar}${p.qty > 1 ? ' ×' + p.qty : ''}`))));
+    const TYPE = { mate: 'تلامس وجهين', flush: 'استواء وجهين', align: 'محاذاة المراكز', clearance: 'خلوص', concentric: 'محوران على خط واحد', angle: 'زاوية حول محور', revolute: 'مفصل دوران', slider: 'مفصل انزلاق', cylindrical: 'مفصل أسطواني', planar: 'مفصل مستوٍ', fixed: 'تثبيت' };
+    const measured = (c) => c.type === 'clearance' ? `${c.measured_mm} mm (≥ ${c.min})` : c.type === 'angle' ? `${c.residual_deg}° (الهدف ${c.angle}°)` : c.type === 'revolute' ? `${c.residual} (الزاوية ${c.angle || 0}°${c.range ? `، المدى ${c.range[0]}°…${c.range[1]}°` : ''})` : c.type === 'slider' ? `${c.residual} (الإزاحة ${c.offset || 0} مم${c.range ? `، المشوار ${c.range[0]}…${c.range[1]} مم` : ''})` : c.residual_mm !== undefined ? `${c.residual_mm} mm` : `${c.residual}`;
+    const ct = el('tbody');
+    R.constraints.forEach((c) => ct.append(el('tr', {}, el('td', { textContent: `${TYPE[c.type] || c.type}: ${c.a} ↔ ${c.b}${c.axis && /^[xyz]$/.test(c.axis) ? ' (' + c.axis.toUpperCase() + ')' : ''}` }), el('td', { className: 'num', textContent: measured(c) }), el('td', { className: c.ok ? 'pass' : 'fail', textContent: c.ok ? '✓' : '✗' }))));
+    box.append(el('p', { className: 'label', textContent: 'القيود — مُحلّة ثم مقيسة من جديد' }), el('div', { className: 'tblwrap' }, el('table', { className: 'tbl' }, el('thead', {}, el('tr', {}, ...['القيد', 'المقيس', ''].map((h) => el('th', { textContent: h })))), ct)));
+    for (const c of R.constraints.filter((x) => x.sweep)) {
+      const hits = c.sweep.filter((x) => x.hits.length);
+      box.append(el('p', { className: hits.length ? 'fail' : 'pass', textContent: hits.length
+        ? `مدى حركة ${c.b} على ${c.a}: يصطدم عند ${hits.map((x) => `${x.offset !== undefined ? x.offset + ' مم' : x.angle + '°'} (${x.hits.map((h) => `${h.with} ${h.volume_mm3} مم³`).join('، ')})`).join('؛ ')}`
+        : `مدى حركة ${c.b} على ${c.a} (${c.range[0]}…${c.range[1]}${c.type === 'slider' ? ' مم' : '°'}، ${c.sweep.length} وضعًا): لا اصطدام في أي وضع.` }));
+    }
+    box.append(R.interference.length ? el('ul', { className: 'list' }, ...R.interference.map((i) => el('li', { className: 'fail', textContent: `تداخل بين ${i.a} و${i.b}: ${i.volume_mm3} مم³ (تقاطع بولياني دقيق)` }))) : el('p', { className: 'pass', textContent: 'لا تداخل بين أي قطعتين (فُحص كل زوج بتقاطع بولياني دقيق).' }));
+    const bt = el('tbody');
+    R.bom.forEach((r) => bt.append(el('tr', {}, el('td', { textContent: String(r.item) }), el('td', { textContent: r.name_ar }), ...[r.qty, r.material, r.mass_g_each + ' g', fmtTime(r.time_min_each)].map((x) => el('td', { className: 'num', textContent: String(x) })))));
+    bt.append(el('tr', {}, el('td', {}), el('td', {}, el('b', { textContent: 'المجموع' })), el('td', { className: 'num', textContent: String(R.totals.parts) }), el('td', {}), el('td', { className: 'num', textContent: R.totals.mass_g + ' g' }), el('td', { className: 'num', textContent: fmtTime(R.totals.time_min) })));
+    box.append(el('p', { className: 'label', textContent: 'قائمة القطع (BOM)' }), el('div', { className: 'tblwrap' }, el('table', { className: 'tbl' }, el('thead', {}, el('tr', {}, ...['#', 'القطعة', 'العدد', 'المادة', 'الوزن للقطعة', 'الزمن للقطعة'].map((h) => el('th', { textContent: h })))), bt)));
+    const note = el('span', { className: 'thinking' });
+    const dl = el('button', { type: 'button', className: 'btn primary', textContent: 'تنزيل كل القطع (STL لكل قطعة + 3MF للتجميعة)', disabled: !S.downloads });
+    dl.onclick = async () => {
+      const enc = (o) => new TextEncoder().encode(JSON.stringify(o, null, 2));
+      const files = [...out.parts.map((p) => [`${p.id}.stl`, p.stl]), ['assembly.3mf', out.threemf], ['assembly.formacad.json', enc(spec)], ['report.json', enc(R)]];
+      try { await S.downloads.save({ filename: 'forma-assembly.zip', data: zip(files) }); note.textContent = 'حُفظ الملف.'; } catch (e) { note.textContent = e && e.code === 'declined' ? 'أُلغي التنزيل.' : 'التنزيل غير متاح.'; }
+    };
+    box.append(el('div', { className: 'row' }, dl, note), el('p', { className: 'sub', textContent: 'كل قطعة تُطبع منفصلة في اتجاه طباعتها؛ ملف 3MF يحتوي القطع في مواضعها المجمّعة للمراجعة. التجميعات لا تُحفظ في مسار الاعتماد والطباعة بعد — نزّلها أو اعتمد كل قطعة كمشروع.' }));
+    if (typeof afterAssembly === 'function') afterAssembly();
+  }
+
+  function finishDesign(out, refit) {
+    if ($('asmBox')) $('asmBox').hidden = true;
+    S.asm = null;
+    $('progress').hidden = true;
+    if (!out.result) {
+      showError('لم ينجح بناء التصميم بعد محاولات الإصلاح: ' + (out.error && out.error.message || '') + ' — اطلب تعديلًا أو ابدأ بفكرة أوضح.');
+      S.design = out.design; $('editForm').hidden = false; return;
+    }
+    S.design = out.design; S.result = out.result; S.inspection = out.inspection;
+    S.history.push(JSON.parse(JSON.stringify(out.design)));
+    bubble('المصمّم', (out.design.summary_ar || out.design.name_ar || 'التصميم جاهز.') + (out.inspection ? ` — تقييم الفحص البصري ${out.inspection.score}/10${out.inspection.applied ? ' (طُبّقت ملاحظاته)' : ''}.` : ''));
+    renderResult(refit);
+    $('editForm').hidden = false;
+  }
+
+  function fail(e, after, retry) {
+    $('progress').hidden = true;
+    const transient = e && ['upstream_error', 'invalid_json', 'empty_completion', 'cancelled'].includes(e.code);
+    if (e && e.code === 'cancelled') { showError('أوقفت العملية.', retry); }
+    else showError(ERR[e && e.code] || ('حدث خطأ: ' + (e && e.message || e)), transient || !ERR[e && e.code] ? retry : null);
+    if (after) after();
+  }
+
+  $('editForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const req = $('edit').value.trim();
+    if (!req || !S.design) return;
+    showError(''); bubble('أنت', req); $('edit').value = ''; $('editForm').hidden = true;
+    setProgress([['design', 'تعديل النموذج حسب طلبك'], ['build', STEP_NAMES.build]]);
+    try {
+      step('design', 'running');
+      const revised = A.checkDesign(await ask(A.revisePrompt(brief(), S.design, req), { ...A.DESIGN_TIER, label: 'revise' }));
+      step('design', 'done', revised.name_ar);
+      S.qa.push({ question: 'تعديل طلبه الزبون', answer: req });
+      const out = await A.designLoop({ ask: async (p, o) => (o.label === 'design' ? revised : ask(p, o)), build, render: S.images ? renderViews : null, onStep: step }, brief(), { maxRepairs: 2 });
+      finishDesign(out, false);
+    } catch (err) { fail(err, () => { $('editForm').hidden = false; }); }
+  };
+  $('restart').onclick = () => { $('restartRow').hidden = true; S.photos = []; $('thumbs').textContent = ''; $('editForm').hidden = true; $('ideaBox').hidden = false; $('thread').textContent = ''; showError(''); $('idea').focus(); };
+  $('start').onclick = startIdea;
+
+  // ------------------------------------------------------------------ result
+  const STATUS = { VALIDATED: 'اجتاز الفحص الهندسي', VALID_WITH_WARNINGS: 'صالح مع تحذيرات', REPAIR_REQUIRED: 'يحتاج إصلاحًا', INVALID: 'غير صالح' };
+  let rebuildTimer = null;
+  function renderResult(refit) {
+    const d = S.design, r = S.result;
+    showModel(r, refit);
+    $('resultTitle').textContent = d.name_ar || 'التصميم';
+    $('status').hidden = false; $('status').className = 'status ' + r.status; $('status').textContent = STATUS[r.status] || r.status;
+    const ch = (r.analysis && r.analysis.checks) || [], okN = ch.filter((c) => c.pass).length;
+    $('checksChip').hidden = !ch.length; $('checksChip').textContent = `المقاسات ${okN}/${ch.length}`;
+    $('checksChip').className = 'chk ' + (okN === ch.length ? 'pass' : 'fail');
+    $('dims').textContent = '';
+    [['العرض X', r.size_mm.x], ['العمق Y', r.size_mm.y], ['الارتفاع Z', r.size_mm.z]].forEach(([l, v]) => $('dims').append(el('div', { className: 'dim' }, el('span', { textContent: l }), el('strong', { textContent: v.toFixed(2) + ' mm' }))));
+    $('summary').hidden = !d.summary_ar; $('summary').textContent = d.summary_ar || '';
+    renderParams();
+    $('download').hidden = !S.downloads;
+    $('restartRow').hidden = false;
+    renderTabs();
+  }
+
+  function renderParams() {
+    const box = $('params'); box.textContent = '';
+    const ps = S.design.parameters || [];
+    $('paramsBox').hidden = !ps.length;
+    ps.forEach((p) => {
+      const id = 'p_' + p.name;
+      const input = el('input', { type: 'number', id, value: S.result.params[p.name] ?? p.value, step: 'any' });
+      if (p.min !== undefined) input.min = p.min; if (p.max !== undefined) input.max = p.max;
+      input.oninput = () => { clearTimeout(rebuildTimer); rebuildTimer = setTimeout(rebuildFromParams, 350); };
+      const unit = { mm: 'مم', deg: '°', count: 'عدد' }[p.unit] || p.unit || '';
+      box.append(el('div', { className: 'param' }, el('label', { htmlFor: id, textContent: p.label_ar || p.name }), el('div', { className: 'inrow' }, input, el('span', { className: 'unit', textContent: unit }))));
+    });
+  }
+
+  async function rebuildFromParams() {
+    const overrides = {};
+    for (const p of S.design.parameters || []) { const v = parseFloat($('p_' + p.name).value); if (Number.isFinite(v)) overrides[p.name] = v; }
+    showError('');
+    try { S.result = await build(S.design, overrides); S.inspection = null; renderResult(false); }
+    catch (e) { showError('هذه القيم لا تعطي شكلًا صالحًا: ' + e.message); }
+  }
+
+  const TABS = [['report', 'تقرير الفحص'], ['verify', 'التحقق من المقاسات'], ['dfm', 'قابلية التصنيع'], ['print', 'الطباعة والكلفة'], ['reqs', 'المتطلبات'], ['inspect', 'الفحص البصري'], ['drawing', 'الرسم الهندسي والملفات'], ['code', 'نموذج CAD']];
+  const CHECK_TYPE = { size: 'البعد الكلي', gap: 'فتحة / فراغ', wall: 'سماكة مادة', empty: 'يجب أن يكون فارغًا', solid: 'يجب أن يكون مادة' };
+  const fmtVal = (x) => (typeof x === 'number' ? x.toFixed(2) + ' mm' : x === 'empty' ? 'فارغ' : x === 'solid' ? 'مادة' : x === 'open' ? 'مفتوح' : String(x ?? '—'));
+  let pricePerKg = 25000;
+  try { const v = parseFloat(localStorage.getItem('forma_price_kg')); if (v > 0) pricePerKg = v; } catch (e) { /* storage unavailable */ }
+  function fmtTime(min) { const h = Math.floor(min / 60), m = min % 60; return h ? `${h} س ${m} د` : `${m} د`; }
+  const factRow = (pairs) => el('div', { className: 'facts' }, ...pairs.map(([k, x]) => el('div', {}, el('span', { textContent: k }), el('b', { textContent: String(x) }))));
+  let tab = 'report';
+  function renderTabs() {
+    $('tabsBox').hidden = false;
+    const t = $('tabs'); t.textContent = '';
+    TABS.forEach(([id, name]) => { const b = el('button', { type: 'button', className: 'tab', textContent: name, role: 'tab', onclick: () => { tab = id; renderTabs(); } }); b.setAttribute('aria-selected', String(id === tab)); t.append(b); });
+    const p = $('tabpanel'); p.textContent = '';
+    const r = S.result, d = S.design, v = r.post_export_validation;
+    if (tab === 'report') {
+      const st = v.stats;
+      const an = r.analysis || { checks: [], dfm: { issues: [] } }, okN = an.checks.filter((c) => c.pass).length;
+      const dErr = an.dfm.issues.filter((i) => i.severity === 'error').length, dWarn = an.dfm.issues.length - dErr;
+      p.append(el('p', {}, el('span', { className: an.checks.length && okN === an.checks.length ? 'pass' : an.checks.length ? 'fail' : '', textContent: an.checks.length ? `مطابقة المقاسات: ${okN} من ${an.checks.length}` : 'لا فحوص مقاسات لهذه النسخة' }), ' · ',
+        el('span', { className: dErr ? 'fail' : dWarn ? 'warnc' : 'pass', textContent: dErr ? `قابلية التصنيع: ${dErr} مشكلة` : dWarn ? `قابلية التصنيع: ${dWarn} تحذير` : 'قابلية التصنيع: سليمة' })));
+      p.append(el('div', { className: 'facts' }, ...[['المثلثات', r.triangles.toLocaleString('en')], ['الحجم', ((st.volume_mm3 || 0) / 1000).toFixed(1) + ' cm³'], ['الأجسام', st.bodies], ['أرقّ جدار (تقدير)', st.estimated_min_wall_mm == null ? '—' : st.estimated_min_wall_mm + ' mm'], ['عُقد CAD', r.cad_stats.nodes], ['زمن البناء', r.duration_ms + ' ms']].map(([k, x]) => el('div', {}, el('span', { textContent: k }), el('b', { textContent: String(x) })))));
+      if (v.issues.length) p.append(el('ul', { className: 'list ltr' }, ...v.issues.map((i) => el('li', { textContent: `${i.code}${i.count != null ? ' ×' + i.count : ''} — ${i.message}` }))));
+      if (r.validation.repairs_applied.length) p.append(el('p', { className: 'sub', textContent: 'إصلاحات آلية: ' + r.validation.repairs_applied.join('؛ ') }));
+      p.append(el('p', { className: 'sub', textContent: 'لم يُفحص هنا: التقاطعات الذاتية والدعامات — يفحصها المقطّع ومراجعة المصمّم البشري.' }));
+    } else if (tab === 'verify') {
+      const ch = (r.analysis && r.analysis.checks) || [];
+      if (!ch.length) p.append(el('p', { className: 'sub', textContent: 'لم يكتب المصمّم فحوص مقاسات لهذه النسخة.' }));
+      else {
+        p.append(el('p', { className: 'sub', textContent: 'كل بند قيس آليًا على ملف STL النهائي نفسه (بعد التصدير)، بإطلاق أشعة عبر الشكل — ليس تقديرًا من الذكاء الاصطناعي. تتغيّر القيم المطلوبة مع الأبعاد التي تعدّلها.' }));
+        const tb = el('tbody');
+        ch.forEach((c) => tb.append(el('tr', {}, el('td', { textContent: c.label }), el('td', { textContent: CHECK_TYPE[c.type] || c.type || '—' }),
+          el('td', { className: 'num', textContent: fmtVal(c.expect) }), el('td', { className: 'num', textContent: c.error ? '—' : fmtVal(c.measured) }),
+          el('td', { className: 'num', textContent: c.tol != null ? '±' + c.tol : '' }),
+          el('td', { className: c.pass ? 'pass' : 'fail', textContent: c.pass ? '✓ مطابق' : c.error ? '✗ خطأ: ' + c.error : '✗ غير مطابق' }))));
+        p.append(el('div', { className: 'tblwrap' }, el('table', { className: 'tbl' }, el('thead', {}, el('tr', {}, ...['البند', 'النوع', 'المطلوب', 'المقاس فعليًا', 'السماحية', 'النتيجة'].map((x) => el('th', { textContent: x })))), tb)));
+      }
+    } else if (tab === 'dfm') {
+      const D = r.analysis && r.analysis.dfm;
+      if (!D) { p.append(el('p', { className: 'sub', textContent: 'لا يوجد تحليل.' })); return; }
+      p.append(factRow([['أرقّ جدار مقيس', D.stats.min_wall_mm == null ? '—' : D.stats.min_wall_mm + ' mm'], ['سطوح متدلية', D.stats.overhang_area_mm2 + ' mm²'], ['تلامس مع سطح الطابعة', D.stats.bed_contact_mm2 + ' mm²'], ['مساحة السطح', D.stats.surface_mm2 + ' mm²']]));
+      if (!D.issues.length) p.append(el('p', { className: 'pass', textContent: 'لا توجد مشاكل تصنيع مكتشفة.' }));
+      else p.append(el('ul', { className: 'list' }, ...D.issues.map((i) => el('li', {}, el('span', { className: i.severity === 'error' ? 'fail' : 'warnc', textContent: i.severity === 'error' ? 'مشكلة: ' : 'تحذير: ' }), i.message_ar))));
+      p.append(el('div', { className: 'row' }, el('button', { type: 'button', className: 'btn', textContent: V.dfm ? 'إخفاء التلوين' : 'لوّن المشاكل على المجسم', onclick: () => { V.dfm = !V.dfm; paint(); renderTabs(); } })));
+      p.append(el('p', { className: 'sub', textContent: 'الافتراضات: فوهة 0.4 مم، جدار أدنى 1.2 مم، زاوية تدلٍّ 45° في اتجاه الطباعة الظاهر (Z للأعلى). السماكة مقيسة بأشعة من كل وجه نحو الداخل.' }));
+    } else if (tab === 'reqs') {
+      p.append(el('ul', { className: 'list ltr' }, ...(d.requirements || []).map((x) => el('li', { textContent: x }))));
+      if ((d.assumptions_ar || []).length) p.append(el('p', { className: 'label', textContent: 'افتراضات المصمّم' }), el('ul', { className: 'list' }, ...d.assumptions_ar.map((x) => el('li', { textContent: x }))));
+    } else if (tab === 'print') {
+      const pr = d.print || {};
+      p.append(el('div', { className: 'facts' }, ...[['المادة', pr.material || '—'], ['ارتفاع الطبقة', pr.layer_height_mm ? pr.layer_height_mm + ' mm' : '—'], ['نسبة الملء', pr.infill_percent != null ? pr.infill_percent + '%' : '—'], ['دعامات', pr.supports ? 'نعم' : 'لا']].map(([k, x]) => el('div', {}, el('span', { textContent: k }), el('b', { textContent: String(x) })))));
+      if (pr.orientation_ar) p.append(el('p', { textContent: 'الاتجاه: ' + pr.orientation_ar }));
+      if ((pr.notes_ar || []).length) p.append(el('ul', { className: 'list' }, ...pr.notes_ar.map((x) => el('li', { textContent: x }))));
+      const est = r.analysis && r.analysis.estimate;
+      if (est) {
+        p.append(el('p', { className: 'label', textContent: 'تقدير الطباعة' }));
+        const cost = Math.round((est.mass_g / 1000) * pricePerKg);
+        p.append(factRow([['وزن القطعة', est.mass_g + ' g'], ['طول الخيط (1.75 مم)', est.filament_m + ' m'], ['زمن الطباعة', '≈ ' + fmtTime(est.time_min)], ['عدد الطبقات', est.layers], ['حجم البلاستيك', est.plastic_cm3 + ' cm³'], ['كلفة المادة', cost.toLocaleString('en') + ' د.ع']]));
+        const inp = el('input', { type: 'number', min: 1, step: 500, value: pricePerKg });
+        inp.onchange = () => { const v = parseFloat(inp.value); if (v > 0) { pricePerKg = v; try { localStorage.setItem('forma_price_kg', String(v)); } catch (e) { /* ignore */ } renderTabs(); } };
+        p.append(el('label', { className: 'price' }, 'سعر كيلو ' + est.material + ' (د.ع):', inp));
+        p.append(el('p', { className: 'sub', textContent: `تقدير تقريبي (±25%) لطابعة Ender-3 بـ3 جدران، كثافة ${est.density_g_cm3} غ/سم³، بدون دعامات. الرقم الدقيق يعطيه برنامج التقطيع (OrcaSlicer).` }));
+      }
+    } else if (tab === 'inspect') {
+      const ins = S.inspection;
+      if (!ins) p.append(el('p', { className: 'sub', textContent: S.images ? 'لا يوجد فحص بصري لهذه النسخة (تُفحص النسخة التي يكتبها المصمّم، لا التعديلات اليدوية للأبعاد).' : 'الفحص البصري يحتاج السماح بإرسال الصور إلى Claude.' }));
+      else { p.append(el('p', { textContent: `التقييم: ${ins.score}/10 — ${ins.verdict === 'pass' ? 'مقبول' : 'طُلب تعديل'}${ins.applied ? '، وطُبّق التعديل' : ''}` })); p.append(el('ul', { className: 'list' }, ...(ins.findings_ar || []).map((x) => el('li', { textContent: x })))); }
+    } else if (tab === 'drawing') {
+      renderDrawingTab(p);
+    } else if (tab === 'code') {
+      p.append(el('p', { className: 'sub', textContent: 'هذا هو البرنامج الذي كتبه المصمّم بلغة FormaCAD. لا يُنفَّذ ككود؛ تقرأه آلة البناء الهندسية كبيانات.' }));
+      const src = JSON.stringify({ parameters: d.parameters, model: d.model, checks: d.checks || [] }, null, 2);
+      const editable = typeof studioEditable === 'function' ? studioEditable() : true;
+      if (!editable) { p.append(el('pre', { className: 'code', textContent: src })); return; }
+      const ta = el('textarea', { className: 'codeedit', id: 'codeEdit', value: src, spellcheck: false });
+      const msg = el('span', { className: 'thinking' });
+      const go = el('button', { type: 'button', className: 'btn primary', textContent: 'ابنِ من هذا النموذج' });
+      go.onclick = async () => {
+        let parsed;
+        try { parsed = JSON.parse(ta.value); } catch (e) { msg.textContent = 'JSON غير صالح: ' + e.message; return; }
+        const next = A.checkDesign({ ...S.design, ...parsed });
+        msg.textContent = 'يُبنى…'; go.disabled = true;
+        try { const r = await build(next, {}); S.design = next; S.result = r; S.inspection = null; renderResult(false); if (typeof afterDesign === 'function') afterDesign(); tab = 'verify'; renderTabs(); }
+        catch (e) { msg.textContent = 'فشل البناء: ' + (e.message || e.code); }
+        finally { go.disabled = false; }
+      };
+      p.append(el('p', { className: 'sub', textContent: 'يمكنك تعديل النموذج مباشرة (للمصمّمين). القيم المحفوظة للأبعاد تبقى من الخانات أعلاه.' }), ta, el('div', { className: 'row' }, go, msg));
+    }
+  }
+
+  // ------------------------------------------------------------------ engineering drawing + other file formats
+  const DRW = { opts: { standard: 'ISO', sheet: 'A3', precision: 2 }, layout: null, key: null, busy: false, msg: '' };
+  const baseName = () => { const s = S.result.size_mm; return 'forma-design-' + [s.x, s.y, s.z].map((x) => Math.round(x)).join('x') + 'mm'; };
+  const curKey = () => JSON.stringify([S.design && S.design.model, S.result && S.result.params, DRW.opts]);
+  async function saveFile(filename, data) {
+    if (!S.downloads) throw { code: 'unavailable' };
+    await S.downloads.save({ filename, data: data instanceof Blob ? data : new Blob([data]) });
+  }
+  // Arabic and other non-Latin text goes into the PDF as a 300 dpi image drawn by the browser (correct shaping)
+  function rasterize(str, sizeMm) {
+    const px = Math.max(8, Math.round(sizeMm * 11.8)), c = document.createElement('canvas'), g = c.getContext('2d');
+    const font = `${px}px "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif`;
+    g.font = font; const w = Math.ceil(g.measureText(str).width) + 4, h = Math.ceil(px * 1.25);
+    c.width = w; c.height = h; g.font = font; g.direction = 'rtl'; g.textAlign = 'right'; g.textBaseline = 'alphabetic'; g.fillStyle = '#000';
+    g.fillText(str, w - 2, Math.round(px * 0.98));
+    return new Promise((res) => c.toBlob(async (b) => res(b ? { png: new Uint8Array(await b.arrayBuffer()), width: w, height: h } : null), 'image/png'));
+  }
+  function drawingMeta() {
+    return { title: (S.design.name_en || S.design.name_ar || 'PART'), material: (S.design.print && S.design.print.material) || '-', revision: S.history.length || 1, project: S.idea ? (S.idea.length > 40 ? S.idea.slice(0, 40).replace(/\s+\S*$/, '') + '…' : S.idea) : '-' };
+  }
+  async function makeDrawing() {
+    DRW.busy = true; DRW.msg = 'يُرسم المخطط ويُقاس من الشكل…'; renderTabs();
+    try {
+      const out = await runJob({ job: 'drawing', design: S.design, overrides: S.result.params, meta: drawingMeta(), opts: DRW.opts });
+      DRW.layout = out.layout; DRW.key = curKey(); DRW.msg = '';
+    } catch (e) { DRW.layout = null; DRW.msg = 'تعذّر إنشاء الرسم: ' + (e.message || e.code); }
+    DRW.busy = false; if (tab === 'drawing') renderTabs();
+  }
+  function renderDrawingTab(p) {
+    const sel = (key, label, options) => {
+      const s = el('select', {}, ...options.map(([v, t]) => { const o = el('option', { value: String(v), textContent: t }); if (String(DRW.opts[key]) === String(v)) o.selected = true; return o; }));
+      s.onchange = () => { DRW.opts[key] = key === 'precision' ? +s.value : s.value; DRW.layout = null; renderTabs(); };
+      return el('label', { className: 'price' }, label + ' ', s);
+    };
+    p.append(el('p', { className: 'sub', textContent: 'رسم تصنيعي بثلاثة مساقط ومنظور، بخطوط مخفية متقطعة، وأبعاد كلية وقطر وعمق كل ثقب — كل رقم مقروء من الشكل نفسه ومقارن بالقياس عبره، لا مكتوب يدويًا. المخطط يُصدَّر PDF متجهيًا قابلًا للطباعة بالمقياس.' }));
+    p.append(el('div', { className: 'row' }, sel('standard', 'المعيار', [['ISO', 'ISO (الزاوية الأولى)'], ['ASME', 'ASME (الزاوية الثالثة)']]), sel('sheet', 'الورقة', [['A4', 'A4'], ['A3', 'A3'], ['A2', 'A2'], ['A1', 'A1']]), sel('precision', 'الدقة', [[1, '0.1 مم'], [2, '0.01 مم']])));
+    const fresh = DRW.layout && DRW.key === curKey();
+    const go = el('button', { type: 'button', className: 'btn primary', textContent: fresh ? 'أعد الرسم' : 'أنشئ الرسم الهندسي', disabled: DRW.busy, onclick: makeDrawing });
+    p.append(el('div', { className: 'row' }, go, el('span', { className: 'thinking', textContent: DRW.msg })));
+    if (fresh) {
+      const L = DRW.layout, R = L.report;
+      const box = el('div', { className: 'drwprev' }); box.innerHTML = FormaDrawing.toSVG(L); // generated locally from numbers; contains no user HTML
+      p.append(box);
+      const bad = R.consistency.filter((c) => !c.ok);
+      p.append(factRow([['المقياس', R.scale], ['الورقة', R.sheet], ['الإسقاط', R.projection === 'first-angle' ? 'الزاوية الأولى' : 'الزاوية الثالثة'], ['ثقوب مكتشفة', R.holes.length], ['مقطع A-A', R.section ? R.section.area_mm2 + ' مم²' : '—'], ['مراجع GD&T', (R.gdt && R.gdt.datums.join(' ')) || '—'], ['تطابق الأبعاد', bad.length ? `${bad.length} غير مطابق` : 'كلها مطابقة']]));
+      if ((R.validation || []).length) p.append(el('ul', { className: 'list ltr' }, ...R.validation.map((x) => el('li', { className: 'fail', textContent: x }))));
+      if (R.gdt && R.gdt.frames.length) p.append(el('p', { className: 'sub', textContent: 'قيم سماحيات GD&T افتراضية (استواء 0.1، موضع Ø0.2) — يؤكدها المصمّم المراجع.' }));
+      if (!R.fits || R.warnings.length) p.append(el('p', { className: 'fail', textContent: R.warnings.join(' — ') || 'لا يتسع الشكل لهذه الورقة؛ اختر ورقة أكبر.' }));
+      if (R.overlaps.length) p.append(el('p', { className: 'warnc', textContent: 'تداخل نصوص: ' + R.overlaps.length }));
+      if (bad.length) p.append(el('ul', { className: 'list ltr' }, ...bad.map((c) => el('li', { textContent: `${c.item}: drawing ${c.drawing} / geometry ${c.geometry}` }))));
+      p.append(el('div', { className: 'row' },
+        el('button', { type: 'button', className: 'btn', textContent: 'تنزيل PDF', disabled: !S.downloads || !R.fits, onclick: async () => {
+          try { const bytes = await FormaDrawing.toPDF(L, window.PDFLib, { rasterize, title: drawingMeta().title }); await saveFile(baseName() + '-drawing-' + R.sheet + '.pdf', bytes); DRW.msg = 'حُفظ ملف PDF.'; }
+          catch (e) { DRW.msg = e && e.code === 'declined' ? 'أُلغي التنزيل.' : 'تعذّر حفظ PDF: ' + (e.message || e.code); }
+          renderTabs();
+        } }),
+        el('button', { type: 'button', className: 'btn', textContent: 'تنزيل SVG', disabled: !S.downloads, onclick: async () => { try { await saveFile(baseName() + '-drawing.svg', new Blob([FormaDrawing.toSVG(L)], { type: 'image/svg+xml' })); } catch (e) { /* declined */ } } })));
+    }
+    // ---- other file formats of the same part
+    p.append(el('p', { className: 'label', textContent: 'تصدير الشكل بصيغ أخرى' }));
+    const fmtSel = el('select', {}, ...[['stl', 'STL (للطباعة)'], ['3mf', '3MF (للطباعة، بالملليمتر)'], ['obj', 'OBJ'], ['glb', 'GLB (للعرض ثلاثي الأبعاد)']].map(([v, t]) => el('option', { value: v, textContent: t })));
+    const qSel = el('select', {}, el('option', { value: 'std', textContent: 'دقة عادية (مثل المعاينة)' }), el('option', { value: 'fine', textContent: 'دقة عالية (انحراف ≤ 0.01 مم على المنحنيات)' }));
+    const note = el('span', { className: 'thinking' });
+    const ex = el('button', { type: 'button', className: 'btn', textContent: 'تصدير', disabled: !S.downloads });
+    ex.onclick = async () => {
+      ex.disabled = true; note.textContent = 'يُبنى الملف…';
+      try {
+        const design = qSel.value === 'fine' ? Object.assign({}, S.design, { tessellation: { linear_mm: 0.01, angular_deg: 5 } }) : S.design;
+        const out = await runJob({ job: 'export', design, overrides: S.result.params, meta: { title: drawingMeta().title }, opts: { format: fmtSel.value } });
+        await saveFile(baseName() + (qSel.value === 'fine' ? '-fine' : '') + '.' + fmtSel.value, out.data);
+        note.textContent = `حُفظ (${out.triangles.toLocaleString('en')} مثلث).`;
+      } catch (e) { note.textContent = e && e.code === 'declined' ? 'أُلغي التنزيل.' : 'تعذّر التصدير: ' + (e.message || e.code); }
+      ex.disabled = false;
+    };
+    p.append(el('div', { className: 'row' }, el('label', { className: 'price' }, 'الصيغة ', fmtSel), el('label', { className: 'price' }, 'الدقة ', qSel), ex, note));
+    // ---- STEP needs the OpenCascade service (exact B-Rep); only reachable from the offline file / a server
+    const stepBox = el('div', { className: 'drwbox' });
+    stepBox.append(el('p', { className: 'label', textContent: 'STEP — نموذج CAD دقيق (B-Rep) عبر خدمة OpenCascade' }));
+    if (!(window.FormaLocal && FormaLocal.local)) {
+      stepBox.append(el('p', { className: 'sub', textContent: 'تصدير STEP يحتاج خدمة OpenCascade المثبّتة على جهازك أو على الخادم (انظر docs/CAD_ENGINE.md). هذه الصفحة المستضافة لا تستطيع الاتصال بها؛ استخدم النسخة غير المتصلة (forma-offline.html) أو المنصة على الخادم.' }));
+    } else {
+      const lsGet = (k) => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+      const lsSet = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) { /* blocked */ } };
+      const url = el('input', { type: 'url', placeholder: 'http://localhost:8765', value: lsGet('forma_cad_url') });
+      const tok = el('input', { type: 'password', placeholder: 'CAD_SERVICE_TOKEN (اختياري)', value: lsGet('forma_cad_token'), autocomplete: 'off' });
+      const sn = el('span', { className: 'thinking' });
+      const sb = el('button', { type: 'button', className: 'btn', textContent: 'تصدير STEP' });
+      sb.onclick = async () => {
+        const u = url.value.trim().replace(/\/+$/, ''); lsSet('forma_cad_url', u); lsSet('forma_cad_token', tok.value.trim());
+        if (!/^https?:\/\//.test(u)) { sn.textContent = 'اكتب عنوان الخدمة.'; return; }
+        sb.disabled = true; sn.textContent = 'يُبنى النموذج في OpenCascade…';
+        try {
+          const res = await fetch(u + '/v1/cad/build', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, tok.value.trim() ? { 'X-CAD-Token': tok.value.trim() } : {}), body: JSON.stringify({ design: S.design, overrides: S.result.params, formats: ['step'] }) });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) throw { message: (j.detail && (j.detail.message || JSON.stringify(j.detail))) || 'HTTP ' + res.status };
+          const st = j.exports && j.exports.step;
+          if (!st || !st.check || !st.check.ok) throw { message: 'فشل فحص إعادة قراءة STEP: ' + JSON.stringify(st && st.check) };
+          const bin = Uint8Array.from(atob(st.base64), (ch) => ch.charCodeAt(0));
+          await saveFile(baseName() + '.step', bin);
+          sn.textContent = `حُفظ STEP (${st.check.faces[0]} وجه، أُعيدت قراءته وطابق الحجم).`;
+        } catch (e) { sn.textContent = e && e.code === 'declined' ? 'أُلغي التنزيل.' : 'تعذّر: ' + (e.message || 'لا اتصال بالخدمة'); }
+        sb.disabled = false;
+      };
+      stepBox.append(el('div', { className: 'drwgrid' }, el('label', {}, 'عنوان الخدمة', url), el('label', {}, 'رمز الدخول (يُحفظ على هذا الجهاز فقط)', tok)), el('div', { className: 'row' }, sb, sn));
+    }
+    p.append(stepBox);
+  }
+
+  // ------------------------------------------------------------------ download (zip: STL + design source)
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = (b) => { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  function zip(files) {
+    const parts = [], central = []; let offset = 0;
+    for (const [name, data] of files) {
+      const nm = new TextEncoder().encode(name), crc = crc32(data);
+      const h = new Uint8Array(30 + nm.length), dv = new DataView(h.buffer);
+      dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(6, 0x0800, true); dv.setUint32(14, crc, true); dv.setUint32(18, data.length, true); dv.setUint32(22, data.length, true); dv.setUint16(26, nm.length, true); h.set(nm, 30);
+      const c = new Uint8Array(46 + nm.length), dc = new DataView(c.buffer);
+      dc.setUint32(0, 0x02014b50, true); dc.setUint16(4, 20, true); dc.setUint16(6, 20, true); dc.setUint16(8, 0x0800, true); dc.setUint32(16, crc, true); dc.setUint32(20, data.length, true); dc.setUint32(24, data.length, true); dc.setUint16(28, nm.length, true); dc.setUint32(42, offset, true); c.set(nm, 46);
+      parts.push(h, data); central.push(c); offset += h.length + data.length;
+    }
+    const size = central.reduce((s, c) => s + c.length, 0), end = new Uint8Array(22), de = new DataView(end.buffer);
+    de.setUint32(0, 0x06054b50, true); de.setUint16(8, files.length, true); de.setUint16(10, files.length, true); de.setUint32(12, size, true); de.setUint32(16, offset, true);
+    return new Blob([...parts, ...central, end]);
+  }
+  $('download').onclick = async () => {
+    if (!S.downloads || !S.result) return;
+    const s = S.result.size_mm, base = 'forma-design-' + [s.x, s.y, s.z].map((x) => Math.round(x)).join('x') + 'mm';
+    const design = new TextEncoder().encode(JSON.stringify({ name: S.design.name_ar, idea: S.idea, answers: S.qa, requirements: S.design.requirements, print: S.design.print, parameters: S.design.parameters, values: S.result.params, model: S.design.model, checks: S.design.checks || [], summary_ar: S.design.summary_ar, assumptions_ar: S.design.assumptions_ar }, null, 2));
+    try {
+      await S.downloads.save({ filename: base + '.zip', data: zip([[base + '.stl', S.result.stl], ['design.formacad.json', design], ['report.json', new TextEncoder().encode(JSON.stringify({ status: S.result.status, size_mm: S.result.size_mm, checks: S.result.analysis && S.result.analysis.checks, manufacturability: S.result.analysis && { issues: S.result.analysis.dfm.issues, stats: S.result.analysis.dfm.stats }, estimate: S.result.analysis && S.result.analysis.estimate, validation: S.result.post_export_validation }, null, 2))]]) });
+      $('dlnote').textContent = 'حُفظ الملف.';
+    } catch (e) { $('dlnote').textContent = e && e.code === 'declined' ? 'أُلغي التنزيل.' : 'التنزيل غير متاح في هذا العرض.'; }
+  };
+
+  // ------------------------------------------------------------------ boot
+  initViewer();
+  const use = (n) => FormaLocal.use(n);
+  use('downloads').then((d) => { S.downloads = d; if (S.result) $('download').hidden = !d; }).catch(() => {});
+  function aiOff() {
+    $('aiOff').hidden = false; $('photoRow').hidden = true; $('modeRow').hidden = true; $('mode').value = 'single';
+    $('aiOff').textContent = `يعمل المصمّم الآن بدون ذكاء اصطناعي: يفهم ${FormaStarters.STARTERS.length} أنواع من القطع من وصفك (حامل هاتف، علبة، زاوية تثبيت، حلقة، علّاقة، علاقة سماعات، علبة أردوينو، مفتاح صامولة، مشط كيابل، مزهرية)، ويقرأ المقاسات التي تكتبها ويسألك عن الباقي. للأفكار الحرة خارج هذه الأنواع: ` + (FormaLocal.local ? 'فعّل نموذجًا محليًا (Ollama) من صفحة الإدارة، أو افتح النسخة الأونلاين داخل Claude.' : 'وافق على استخدام Claude عند السؤال.');
+  }
+  use('sample').then(async (s) => {
+    S.sample = s;
+    if (!s) return aiOff();
+    $('aiOff').hidden = true;
+    if (s.local) $('aiOff').hidden = false, $('aiOff').textContent = `المصمّم يعمل بنموذج محلي (${s.local.model}) بدون إنترنت. جودة التصميم أقل من Claude؛ كل نتيجة تُقاس وتُفحص كالعادة.`;
+    const lim = await s.limits().catch(() => null);
+    S.images = !!(lim && lim.images);
+    if (S.images) { S.maxImages = lim.images.maxCount || 4; S.maxImageBytes = lim.images.maxInputBytes || 0; }
+    else { $('photoRow').hidden = true; }
+  }).catch(aiOff);
+
+  // ---- start without AI: ready designs and imported design files
+  async function loadDesign(design, idea, source, keepThread) {
+    showError('');
+    let d;
+    try { d = A.checkDesign(JSON.parse(JSON.stringify(design))); } catch (e) { showError('ملف التصميم غير صالح: ' + e.message); return; }
+    if (!keepThread) {
+      Object.assign(S, { idea: idea || d.name_ar || '', understanding: '', qa: [], round: 99, design: null, result: null, inspection: null, history: [] });
+      $('thread').textContent = '';
+      bubble('أنت', (idea || d.name_ar || 'تصميم') + ' — ' + source);
+    } else Object.assign(S, { round: 99, design: null, result: null, inspection: null });
+    $('ideaBox').hidden = true; $('editForm').hidden = true;
+    setProgress([['build', STEP_NAMES.build]]); step('build', 'running');
+    try {
+      const r = await build(d, {});
+      step('build', 'done', r.status); $('progress').hidden = true;
+      S.design = d; S.result = r; S.history.push(JSON.parse(JSON.stringify(d)));
+      bubble('المصمّم', d.summary_ar || d.name_ar || 'التصميم جاهز.');
+      $('asmBox').hidden = true; S.asm = null;
+      renderResult(true);
+      $('editForm').hidden = !S.sample;
+      if (typeof afterDesign === 'function') afterDesign();
+    } catch (e) { $('progress').hidden = true; showError('تعذّر بناء التصميم: ' + (e.message || e.code)); $('ideaBox').hidden = false; }
+  }
+  (FormaStarters.ASSEMBLIES || []).forEach((a) => $('asmStarters').append(el('button', { type: 'button', className: 'idea', textContent: 'تجميعة: ' + a.name_ar, title: a.summary_ar, onclick: () => loadAssembly(a, 'تجميعة جاهزة') })));
+  (FormaStarters.STARTERS || []).forEach((st) => $('starters').append(el('button', { type: 'button', className: 'idea', textContent: st.design.name_ar, title: st.idea, onclick: () => loadDesign(st.design, st.idea, 'تصميم جاهز') })));
+  $('importDesign').onchange = async () => {
+    const f = $('importDesign').files[0]; $('importDesign').value = '';
+    if (!f) return;
+    let j;
+    try { j = JSON.parse(await f.text()); } catch (e) { showError('هذا الملف ليس JSON صالحًا.'); return; }
+    const params = (j.parameters || []).map((p) => (j.values && j.values[p.name] !== undefined ? { ...p, value: j.values[p.name] } : p));
+    loadDesign({ name_ar: j.name_ar || j.name || 'تصميم مستورد', summary_ar: j.summary_ar || '', requirements: j.requirements || [], parameters: params, model: j.model, checks: j.checks || [], print: j.print || {}, assumptions_ar: j.assumptions_ar || [] }, j.idea || '', 'ملف مستورد: ' + f.name);
+  };
+  window.__forma = { S, build, renderViews, finishDesign };
+})();
+</script>

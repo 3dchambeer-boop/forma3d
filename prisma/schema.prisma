@@ -1,0 +1,547 @@
+// =====================================================================
+// FORMA-3D Domain Schema
+// AI 3D Design & Autonomous Manufacturing SaaS Platform
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------
+// Identity & Organizations
+// ---------------------------------------------------------------------
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String
+  passwordHash    String?
+  avatarUrl       String?
+  role            Role     @default(END_USER)
+  locale          Locale   @default(AR)
+  status          UserStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  lastLoginAt     DateTime?
+  phone           String?            // mobile for WhatsApp; shown only to the user and admins
+  phoneVerified   Boolean  @default(false)
+  emailVerified   Boolean  @default(false)
+  // additive (CMG auth): Google sign-in link, optional TOTP MFA, sign-up details — all nullable, no data migration
+  googleSub       String?  @unique
+  mfaSecret       String?            // base32 TOTP secret; set only after the first code is verified
+  mfaPending      String?            // secret shown during enrolment, not yet confirmed
+  mfaLastCounter  Int?               // last accepted TOTP step (replay guard)
+  country         String?            // ISO 3166-1 alpha-2
+  termsAcceptedAt DateTime?
+
+  memberships     OrganizationMembership[]
+  projects        DesignProject[]
+  reviews         HumanReview[]
+  auditEvents     AuditEvent[]
+  notifications   Notification[]
+  notificationPreference NotificationPreference?
+  invoices        Invoice[]
+  printJobsInitiated PrintJob[]
+  generationsInitiated AIGenerationJob[]
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  members   OrganizationMembership[]
+  projects  DesignProject[]
+  printers  Printer[]
+}
+
+model OrganizationMembership {
+  id              String   @id @default(cuid())
+  userId          String
+  organizationId  String
+  role            Role     @default(END_USER)
+  createdAt       DateTime @default(now())
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+enum Role {
+  END_USER
+  DESIGNER
+  FARM_MANAGER
+  ADMIN
+}
+
+enum Locale {
+  AR
+  EN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+// ---------------------------------------------------------------------
+// Design Projects & Revisions
+// ---------------------------------------------------------------------
+
+model DesignProject {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  ownerId         String
+  organizationId  String
+  status          ProjectStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner           User       @relation(fields: [ownerId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  revisions       DesignRevision[]
+  generations     AIGenerationJob[]
+  printJobs       PrintJob[]
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+model DesignRevision {
+  id              String   @id @default(cuid())
+  projectId       String
+  version         Int
+  status          RevisionStatus @default(DRAFT)
+  prompt          String
+  negativePrompt  String?
+  modelUrl        String?
+  thumbnailUrl    String?
+  format          ModelFormat?
+  vertexCount     Int?
+  faceCount       Int?
+  boundingBoxX    Float?
+  boundingBoxY    Float?
+  boundingBoxZ    Float?          // millimetres — STL carries no unit, so the unit lives here
+  validationReport String?        // JSON report from mesh_validation_service (legacy rows: plain text)
+  validationStatus String?        // VALIDATED | VALID_WITH_WARNINGS | REPAIR_REQUIRED
+  stlUrl          String?         // printable STL in private storage (/api/models/<key>)
+  stlSha256       String?
+  sourceModelUrl  String?         // provider's original file (GLB/OBJ), kept for audit
+  specJson        String?         // structured design spec the geometry was built from
+  createdAt       DateTime @default(now())
+
+  project         DesignProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviews         HumanReview[]
+  printJobs       PrintJob[]
+  generations     AIGenerationJob[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+enum RevisionStatus {
+  DRAFT
+  PROCESSING
+  REVIEW_REQUIRED
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+enum ModelFormat {
+  STL
+  GLB
+  OBJ
+  PLY
+}
+
+// ---------------------------------------------------------------------
+// AI Generation
+// ---------------------------------------------------------------------
+
+model AIGenerationJob {
+  id              String   @id @default(cuid())
+  projectId       String
+  initiatedById   String
+  provider        AIProvider
+  status          GenerationStatus @default(DRAFT)
+  progress        Int      @default(0)
+  inputType       GenerationInputType
+  textPrompt      String?
+  referenceImageUrl String?
+  externalTaskId  String?
+  providerMetadata String?
+  outputModelUrl  String?
+  errorMessage    String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // --- durable job processing (worker: scripts/generation-worker.ts)
+  revisionId      String?
+  idempotencyKey  String?          // client-supplied; repeats return the same job
+  requestJson     String?          // GenerationInput minus jobId (prompt, user fields, sizes)
+  resultJson      String?          // engine summary (status, size_mm, transforms, sha256)
+  stage           String?
+  providerModel   String?
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(3)
+  nextAttemptAt   DateTime?
+  lockedBy        String?
+  lockedAt        DateTime?
+  costCredits     Float?
+
+  project         DesignProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  initiatedBy     User          @relation(fields: [initiatedById], references: [id])
+  revision        DesignRevision? @relation(fields: [revisionId], references: [id])
+  providerAttempts GenerationProviderAttempt[]
+
+  @@unique([initiatedById, idempotencyKey])
+  @@index([projectId])
+  @@index([status])
+  @@index([provider])
+  @@index([status, nextAttemptAt])
+}
+
+// One row per call to a provider's "create task" endpoint. Used to guarantee that
+// a paid task is never submitted twice for the same job.
+model GenerationProviderAttempt {
+  id              String   @id @default(cuid())
+  jobId           String
+  provider        AIProvider
+  status          String            // SUBMITTING | ACCEPTED | SUCCEEDED | FAILED | TASK_FAILED
+  externalTaskId  String?
+  errorCode       String?
+  errorMessage    String?
+  taskMayExist    Boolean  @default(false)
+  creditsConsumed Float?
+  startedAt       DateTime @default(now())
+  finishedAt      DateTime?
+
+  job             AIGenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+enum AIProvider {
+  PARAMETRIC   // ai_3d_engine exact CAD templates
+  AI_DESIGNER  // Claude writes a FormaCAD model; the CAD kernel builds and validates it
+  TRIPO
+  SELF_HOSTED  // the platform's own inference service
+  MOCK         // development/tests only; refused in production
+  MESHY        // Meshy API (text/image-to-3D)
+  RODIN        // Hyper3D Rodin API (text/image-to-3D)
+}
+
+enum GenerationInputType {
+  TEXT_TO_3D
+  IMAGE_TO_3D
+}
+
+enum GenerationStatus {
+  DRAFT
+  QUEUED
+  GENERATING
+  DOWNLOADING
+  CONVERTING
+  VALIDATING
+  PROCESSING       // legacy rows
+  REVIEW_REQUIRED
+  APPROVED         // legacy rows
+  FAILED
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------
+// Human Review
+// ---------------------------------------------------------------------
+
+model HumanReview {
+  id              String   @id @default(cuid())
+  revisionId      String
+  reviewerId      String
+  status          ReviewStatus
+  comments        String?
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+  decidedAt       DateTime?
+
+  revision        DesignRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  reviewer        User           @relation(fields: [reviewerId], references: [id])
+
+  @@index([revisionId])
+  @@index([reviewerId])
+}
+
+enum ReviewStatus {
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+// ---------------------------------------------------------------------
+// Slicing & Printing
+// ---------------------------------------------------------------------
+
+model SlicingProfile {
+  id              String   @id @default(cuid())
+  name            String
+  printerModel    String
+  material        String
+  nozzleDiameter  Float
+  layerHeight     Float
+  infillDensity   Int
+  printSpeed      Int
+  supportsEnabled Boolean @default(true)
+  config          String
+  createdAt       DateTime @default(now())
+  printJobs       PrintJob[]
+}
+
+model PrintJob {
+  id              String   @id @default(cuid())
+  projectId       String
+  revisionId      String
+  initiatedById   String
+  slicingProfileId String?
+  status          PrintJobStatus @default(PENDING_APPROVAL)
+  priority        Int      @default(0)
+  gcodeUrl        String?
+  octoprintPath   String?          // file name on OctoPrint after a verified upload
+  progressPercent Float?           // as reported by OctoPrint
+  lastPrinterState String?
+  cancelRequested Boolean  @default(false)
+  printConfirmedById String?       // user who explicitly confirmed the physical start
+  gcodeSizeBytes  Int?
+  gcodeChecksum   String?
+  estimatedTimeMin Int?
+  actualTimeMin   Int?
+  materialGrams   Float?
+  printerId       String?
+  dispatchedAt    DateTime?
+  completedAt     DateTime?
+  errorMessage    String?
+  // Denormalized display fields (avoid joins in lists)
+  projectName     String?
+  revisionVersion Int?
+  initiatedByName String?
+  printerName     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project         DesignProject @relation(fields: [projectId], references: [id])
+  revision        DesignRevision @relation(fields: [revisionId], references: [id])
+  initiatedBy     User           @relation(fields: [initiatedById], references: [id])
+  slicingProfile  SlicingProfile? @relation(fields: [slicingProfileId], references: [id])
+  printer         Printer?       @relation(fields: [printerId], references: [id])
+
+  @@index([projectId])
+  @@index([revisionId])
+  @@index([status])
+  @@index([printerId])
+}
+
+enum PrintJobStatus {
+  PENDING_APPROVAL
+  APPROVED
+  SLICING
+  SLICED
+  QUEUED_FOR_PRINTER            // legacy dry-run rows
+  AWAITING_PRINT_CONFIRMATION   // G-code verified on OctoPrint, waiting for an explicit start
+  PRINTING
+  COMPLETED
+  FAILED
+  CANCELLED
+  PAUSED
+}
+
+model Printer {
+  id              String   @id @default(cuid())
+  name            String
+  organizationId  String
+  model           String
+  status          PrinterStatus @default(IDLE)
+  buildVolumeX    Int
+  buildVolumeY    Int
+  buildVolumeZ    Int
+  nozzleDiameter  Float
+  materials       String
+  octoprintUrl    String?
+  octoprintApiKey String?         // DEPRECATED: never read; secrets do not belong in the database
+  octoprintApiKeyRef String?      // NAME of the env var holding this printer's OctoPrint API key
+  lastSeenAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  telemetry       PrinterTelemetry[]
+  printJobs       PrintJob[]
+  events          PrinterEvent[]
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+enum PrinterStatus {
+  IDLE
+  BUSY
+  OFFLINE
+  ERROR
+  PAUSED
+  HEATING
+}
+
+model PrinterTelemetry {
+  id              String   @id @default(cuid())
+  printerId       String
+  bedTemp         Float?
+  nozzleTemp      Float?
+  progressPercent Int?
+  jobName         String?
+  recordedAt      DateTime @default(now())
+
+  printer         Printer @relation(fields: [printerId], references: [id], onDelete: Cascade)
+}
+
+// Every command sent to a printer and every state change read from it.
+model PrinterEvent {
+  id              String   @id @default(cuid())
+  printerId       String
+  printJobId      String?
+  actorId         String?
+  type            String            // UPLOAD | START | CANCEL | PAUSE | RESUME | STATE | ERROR
+  message         String
+  data            String?
+  createdAt       DateTime @default(now())
+
+  printer         Printer @relation(fields: [printerId], references: [id], onDelete: Cascade)
+
+  @@index([printerId, createdAt])
+  @@index([printJobId])
+}
+
+// ---------------------------------------------------------------------
+// Platform Operations
+// ---------------------------------------------------------------------
+
+model AuditEvent {
+  id              String   @id @default(cuid())
+  actorId         String?
+  action          String
+  resourceType    String
+  resourceId      String?
+  metadata        String?
+  ipAddress       String?
+  createdAt       DateTime @default(now())
+
+  actor           User? @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([resourceType])
+  @@index([createdAt])
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  type            String
+  title           String
+  message         String
+  read            Boolean  @default(false)
+  link            String?
+  createdAt       DateTime @default(now())
+
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+
+// ===================================================================== Phase 8.5
+model NotificationPreference {
+  userId     String  @id
+  inapp      Boolean @default(true)
+  email      Boolean @default(true)
+  whatsapp   Boolean @default(false)   // opt-in
+  muted      String  @default("[]")    // JSON array of event types
+  updatedAt  DateTime @updatedAt
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationDelivery {
+  key           String   @id            // eventId:userId:channel — idempotency
+  eventId       String
+  userId        String
+  channel       String                  // inapp | email | whatsapp
+  type          String
+  title         String
+  body          String
+  link          String?
+  vars          String   @default("{}")  // template values; never contact details
+  status        String                  // queued | sent | delivered | read | failed
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime
+  providerId    String?
+  lastError     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([status, nextAttemptAt])
+  @@index([providerId])
+}
+
+model Invoice {
+  id          String   @id
+  number      String   @unique
+  orderId     String
+  customerId  String
+  lines       String                     // JSON [{description, qty, unitIqd}]
+  totalIqd    Int
+  status      String                     // ISSUED | PAID | REFUNDED | VOID
+  issuedAt    DateTime
+  paidAt      DateTime?
+  refundedAt  DateTime?
+  customer    User @relation(fields: [customerId], references: [id])
+  payments    Payment[]
+  @@index([customerId])
+}
+
+model InvoiceCounter {
+  year  Int @id
+  seq   Int
+}
+
+model Payment {
+  id          String   @id
+  invoiceId   String
+  provider    String                     // zaincash | fib | manual
+  amountIqd   Int
+  status      String                     // PENDING | PROCESSING | PAID | FAILED | REFUNDED | CANCELED
+  providerRef String?
+  redirectUrl String?
+  refundRequestedAt DateTime?
+  refundReason String?
+  events      String   @default("[]")
+  createdAt   DateTime
+  updatedAt   DateTime
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  @@index([provider, providerRef])
+}
+
+model ProcessedPaymentEvent {
+  key   String   @id                     // provider event id — each processed once
+  at    DateTime @default(now())
+}

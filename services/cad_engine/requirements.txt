@@ -1,0 +1,7 @@
+# B-Rep kernel. CadQuery bundles OCP (OpenCascade 7.7+ Python bindings).
+# Licences: CadQuery Apache-2.0, OCP Apache-2.0, OpenCascade LGPL-2.1 with exception (dynamic linking is fine for this service).
+cadquery>=2.4,<3
+# HTTP API
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6

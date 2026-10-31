@@ -1,0 +1,8 @@
+# Runtime. Lower bounds are versions whose APIs this code uses; lock exact versions
+# on a machine with registry access:  uv pip compile requirements.txt -o requirements.lock
+numpy>=1.26
+scipy>=1.11
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+pydantic>=2.6

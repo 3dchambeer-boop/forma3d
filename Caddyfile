@@ -1,0 +1,25 @@
+:81 {
+	# Only the realtime service may be reached through this hop. A wildcard here would let
+	# any visitor proxy into every local port (geometry engine, OctoPrint, databases).
+	@transform_port_query {
+		query XTransformPort=3030
+	}
+
+	handle @transform_port_query {
+		reverse_proxy localhost:{query.XTransformPort} {
+			header_up Host {host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	handle {
+		reverse_proxy localhost:3000 {
+			header_up Host {host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+}

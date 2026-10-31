@@ -1,0 +1,73 @@
+{
+  "headphone_desk_hook": {
+    "parameters": [
+      {"name":"desk_t","value":25},{"name":"wall","value":5},{"name":"width","value":30},
+      {"name":"clamp_depth","value":45},{"name":"arm_len","value":55},{"name":"lip_h","value":15}
+    ],
+    "model": {"union":[
+      {"name":"top jaw","rounded_box":{"size":["width","clamp_depth","wall"],"r":3},"translate":[0,0,"desk_t+wall"]},
+      {"name":"spine","rounded_box":{"size":["width","wall","desk_t+2*wall"],"r":2}},
+      {"name":"bottom jaw","rounded_box":{"size":["width","clamp_depth*0.6","wall"],"r":3}},
+      {"name":"arm","rounded_box":{"size":["width","arm_len+wall","wall"],"r":3},"translate":[0,"-arm_len",0]},
+      {"name":"lip","rounded_box":{"size":["width","wall","lip_h"],"r":2},"translate":[0,"-arm_len",0]}
+    ]}
+  },
+  "arduino_uno_case": {
+    "parameters": [
+      {"name":"pcb_x","value":68.6},{"name":"pcb_y","value":53.4},{"name":"gap","value":1},{"name":"wall","value":2.4},
+      {"name":"floor","value":2},{"name":"inner_h","value":22},{"name":"standoff_h","value":5}
+    ],
+    "model": {"difference":[
+      {"union":[
+        {"name":"shell","rounded_box":{"size":["pcb_x+2*gap+2*wall","pcb_y+2*gap+2*wall","floor+inner_h"],"r":4}},
+        {"name":"standoffs","union":[
+          {"cylinder":{"d":6,"h":"standoff_h+0.5"},"translate":["wall+gap+14","wall+gap+2.5","floor-0.5"]},
+          {"cylinder":{"d":6,"h":"standoff_h+0.5"},"translate":["wall+gap+15.3","wall+gap+50.7","floor-0.5"]},
+          {"cylinder":{"d":6,"h":"standoff_h+0.5"},"translate":["wall+gap+66.1","wall+gap+7.6","floor-0.5"]},
+          {"cylinder":{"d":6,"h":"standoff_h+0.5"},"translate":["wall+gap+66.1","wall+gap+35.5","floor-0.5"]}
+        ]}
+      ]},
+      {"name":"cavity","rounded_box":{"size":["pcb_x+2*gap","pcb_y+2*gap","inner_h+1"],"r":2},"translate":["wall","wall","floor"]},
+      {"name":"usb port","box":{"size":["wall+2",13,11]},"translate":[-1,"wall+gap+38-6.5","floor+standoff_h+1.6"]},
+      {"name":"power jack","box":{"size":["wall+2",10,12]},"translate":[-1,"wall+gap+7.6-5","floor+standoff_h+1.6"]},
+      {"name":"screw holes","union":[
+        {"cylinder":{"d":2.8,"h":"standoff_h+2"},"translate":["wall+gap+14","wall+gap+2.5","floor"]},
+        {"cylinder":{"d":2.8,"h":"standoff_h+2"},"translate":["wall+gap+15.3","wall+gap+50.7","floor"]},
+        {"cylinder":{"d":2.8,"h":"standoff_h+2"},"translate":["wall+gap+66.1","wall+gap+7.6","floor"]},
+        {"cylinder":{"d":2.8,"h":"standoff_h+2"},"translate":["wall+gap+66.1","wall+gap+35.5","floor"]}
+      ]}
+    ]}
+  },
+  "hex_wrench_m8": {
+    "parameters": [{"name":"af","value":13.2},{"name":"handle_l","value":110},{"name":"t","value":6},{"name":"head_d","value":26}],
+    "model": {"difference":[
+      {"union":[
+        {"cylinder":{"d":"head_d","h":"t","segments":72}},
+        {"rounded_box":{"size":["handle_l",14,"t"],"r":5},"translate":[0,-7,0]},
+        {"cylinder":{"d":16,"h":"t","segments":64},"translate":["handle_l",0,0]}
+      ]},
+      {"cylinder":{"d":"af/cos(30)","h":"t+2","segments":6},"translate":[0,0,-1]},
+      {"cylinder":{"d":6,"h":"t+2"},"translate":["handle_l",0,-1]}
+    ]}
+  },
+  "cable_comb": {
+    "parameters": [{"name":"n","value":6},{"name":"cable_d","value":6.5},{"name":"pitch","value":10},{"name":"h","value":12}],
+    "model": {"difference":[
+      {"rounded_box":{"size":["n*pitch+6",14,"h"],"r":3}},
+      {"linear_array":{"count":"n","step":["pitch",0,0],"child":{"union":[
+        {"cylinder":{"d":"cable_d","h":16,"segments":48},"rotate":[-90,0,0],"translate":["3+pitch/2",-1,"h*0.45"]},
+        {"box":{"size":["cable_d*0.75",16,"h"]},"translate":["3+pitch/2-cable_d*0.375",-1,"h*0.45"]}
+      ]}}}
+    ]}
+  },
+  "vase_spiral_ribs": {
+    "parameters": [{"name":"h","value":120},{"name":"r","value":35},{"name":"ribs","value":12}],
+    "model": {"difference":[
+      {"union":[
+        {"revolve":{"profile":[[0,0],["r",0],["r*1.15","h*0.35"],["r*0.7","h*0.8"],["r*0.8","h"],[0,"h"]],"segments":72}},
+        {"polar_array":{"count":"ribs","child":{"cylinder":{"d":5,"h":"h*0.7","segments":16},"translate":["r*0.97",0,2]}}}
+      ]},
+      {"revolve":{"profile":[[0,2],["r-2",2],["r*1.15-2","h*0.35"],["r*0.7-2","h*0.8"],["r*0.8-2","h+1"],[0,"h+1"]],"segments":72}}
+    ]}
+  }
+}

@@ -1,0 +1,81 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+local-*
+.claude
+.z-ai-config
+*.log
+dev.log
+dev.out.log
+test
+prompt
+
+server.log
+# Skills directory
+/skills/
+# local databases and private runtime storage (generated models, G-code)
+/db/*.db
+/db/*.db-journal
+/storage/*
+# the Tripo GLBs already tracked under storage/models stay tracked as test fixtures
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# native OpenCascade build (scripts/build-occt-native.sh)
+/.occt/
+services/cad_engine/native/build/
+
+# authoring-environment artifacts
+/tool-results/
+/upload/
+.zscripts/dev.pid
+*.db
+*.db-journal
+
+# test fixtures (real Tripo GLBs)
+!/storage/models/
+/storage/models/*
+!/storage/models/cmvmyhhgh0007oo5mg7g8edu8-rev-1-v3.glb
